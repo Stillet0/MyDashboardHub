@@ -103,6 +103,33 @@ export function categoryColor(data: FinancesData, name: string): string {
   return data.categories.find((c) => c.name === name)?.color ?? '#8B93A1'
 }
 
+export function debtCategoryColor(data: FinancesData, name: string): string {
+  return data.debtCategories.find((c) => c.name === name)?.color ?? '#8B93A1'
+}
+
+export function snapshotDebtByCategory(data: FinancesData, snap: Snapshot): Record<string, number> {
+  const map: Record<string, number> = {}
+  if (!snap.debtEntries) return map
+  data.debts.forEach((d) => {
+    const v = snap.debtEntries?.[d.id]
+    if (v === undefined) return
+    map[d.category] = (map[d.category] || 0) + Number(v)
+  })
+  return map
+}
+
+export function getDebtPrefillValue(data: FinancesData, debtId: string, monthKey: string): number | '' {
+  const existingSnap = findSnapshotByMonth(data, monthKey)
+  if (existingSnap?.debtEntries?.[debtId] !== undefined) return existingSnap.debtEntries[debtId]
+  const priorSnaps = sortedSnapshots(data).filter((s) => s.date < monthKey)
+  if (priorSnaps.length) {
+    const prev = priorSnaps[priorSnaps.length - 1]
+    if (prev.debtEntries?.[debtId] !== undefined) return prev.debtEntries[debtId]
+  }
+  const d = data.debts.find((x) => x.id === debtId)
+  return d?.value ?? ''
+}
+
 export function computeDelta(curVal: number, compVal: number | null | undefined) {
   if (compVal === undefined || compVal === null) return { diff: null, pct: null }
   const diff = curVal - compVal
