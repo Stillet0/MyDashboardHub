@@ -37,6 +37,7 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 - [x] Hébergement GitHub Pages + workflow de déploiement
 - [x] Stockage des données via repo GitHub (`monhub-data`) + client API + écran de connexion par token
 - [x] Module Finances — onglet Aperçu (patrimoine net, évolution, répartition par catégorie, fonds d'urgence, objectif, cashflow du mois), inspiré du tracker patrimoine.html existant, données réelles importées
-- [ ] Module Finances — édition (comptes, mise à jour mensuelle, dettes, graphiques détaillés, historique)
+- [x] Module Finances — onglet Comptes (ajout/modification/suppression de comptes, écriture directe dans `monhub-data`)
+- [ ] Module Finances — mise à jour mensuelle (relevé + cashflow), dettes, graphiques détaillés, historique
 - [ ] Service worker / mode hors-ligne
 - [ ] Modules suivants (Agenda, Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)

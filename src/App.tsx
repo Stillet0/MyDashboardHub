@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import TokenGate from './components/TokenGate'
 import { clearToken } from './lib/githubStore'
-import FinancesOverview from './modules/finances/FinancesOverview'
+import FinancesModule from './modules/finances/FinancesModule'
 
 const MODULES = [
   'Aujourd’hui',
@@ -56,7 +56,7 @@ function App() {
 
         <main className="mx-auto max-w-[880px] p-5 pb-20">
           {active === 'Finances' ? (
-            <FinancesOverview />
+            <FinancesModule />
           ) : (
             <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
               Module « {active} » à venir.
