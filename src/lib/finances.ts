@@ -110,6 +110,52 @@ export function computeDelta(curVal: number, compVal: number | null | undefined)
   return { diff, pct }
 }
 
+export function parseSum(str: string): number {
+  const cleaned = str.trim().replace(/,/g, '.').replace(/\s+/g, '')
+  if (cleaned === '') return NaN
+  if (!/^[0-9.+-]+$/.test(cleaned)) return NaN
+  const tokens = cleaned.match(/[+-]?[0-9]*\.?[0-9]+/g)
+  if (!tokens) return NaN
+  return tokens.reduce((sum, t) => sum + parseFloat(t), 0)
+}
+
+export function getPrefillValue(data: FinancesData, accId: string, monthKey: string): number | '' {
+  const existingSnap = findSnapshotByMonth(data, monthKey)
+  if (existingSnap && existingSnap.entries[accId] !== undefined) return existingSnap.entries[accId]
+  const priorSnaps = sortedSnapshots(data).filter((s) => s.date < monthKey)
+  if (priorSnaps.length) {
+    const prev = priorSnaps[priorSnaps.length - 1]
+    if (prev.entries[accId] !== undefined) return prev.entries[accId]
+  }
+  const acc = data.accounts.find((a) => a.id === accId)
+  return acc?.value ?? ''
+}
+
+export function nextUpdateMonth(data: FinancesData): string | null {
+  const snaps = sortedSnapshots(data)
+  if (snaps.length === 0) return currentMonthKey()
+  const last = snaps[snaps.length - 1].date
+  if (last >= currentMonthKey()) return null
+  return shiftMonth(last, 1)
+}
+
+export function nextCashflowMonth(data: FinancesData): string | null {
+  const cfs = sortedCashflows(data)
+  if (cfs.length === 0) return currentMonthKey()
+  const last = cfs[cfs.length - 1].date
+  if (last >= currentMonthKey()) return null
+  return shiftMonth(last, 1)
+}
+
+export function nextEntryMonth(data: FinancesData): string | null {
+  const a = nextUpdateMonth(data)
+  const b = nextCashflowMonth(data)
+  if (a === null && b === null) return null
+  if (a === null) return b
+  if (b === null) return a
+  return a < b ? a : b
+}
+
 export function findSnapshotByMonth(data: FinancesData, monthKey: string): Snapshot | undefined {
   return data.snapshots.find((s) => s.date === monthKey)
 }
