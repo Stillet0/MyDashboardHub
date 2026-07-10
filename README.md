@@ -36,6 +36,7 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 - [x] Manifest PWA minimal (icône + `manifest.webmanifest`)
 - [x] Hébergement GitHub Pages + workflow de déploiement
 - [x] Stockage des données via repo GitHub (`monhub-data`) + client API + écran de connexion par token
+- [x] Module Finances — onglet Aperçu (patrimoine net, évolution, répartition par catégorie, fonds d'urgence, objectif, cashflow du mois), inspiré du tracker patrimoine.html existant, données réelles importées
+- [ ] Module Finances — édition (comptes, mise à jour mensuelle, dettes, graphiques détaillés, historique)
 - [ ] Service worker / mode hors-ligne
-- [ ] Module Finances
 - [ ] Modules suivants (Agenda, Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)
