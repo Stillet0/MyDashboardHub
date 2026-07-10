@@ -294,20 +294,45 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
       <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="mb-3 text-sm font-medium text-[var(--text-muted)]">Dépenses par catégorie</div>
         <div className="divide-y divide-[var(--border)]">
-          {data.expenseCategories.map((c) => (
-            <div key={c.name} className="flex items-center justify-between gap-3 py-3">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
-                {c.name}
-              </span>
-              <input
-                value={expenseValues[c.name] ?? ''}
-                onChange={(e) => setExpenseValues({ ...expenseValues, [c.name]: e.target.value })}
-                placeholder="0 ou 10+900+20"
-                className="w-[160px] rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-right text-sm outline-none focus:border-[var(--gold)]"
-              />
-            </div>
-          ))}
+          {data.expenseCategories.map((c) => {
+            const budget = data.expenseBudgets[c.name]
+            const actual = parseSum(expenseValues[c.name] ?? '')
+            const actualSafe = Number.isNaN(actual) ? 0 : actual
+            const pct = budget ? Math.min(150, (actualSafe / budget) * 100) : 0
+            const over = budget !== undefined && actualSafe > budget
+            return (
+              <div key={c.name} className="py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <span className="h-2 w-2 rounded-full" style={{ background: c.color }} />
+                    {c.name}
+                  </span>
+                  <input
+                    value={expenseValues[c.name] ?? ''}
+                    onChange={(e) => setExpenseValues({ ...expenseValues, [c.name]: e.target.value })}
+                    placeholder="0 ou 10+900+20"
+                    className="w-[160px] rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-right text-sm outline-none focus:border-[var(--gold)]"
+                  />
+                </div>
+                {budget !== undefined && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min(100, pct)}%`,
+                          background: over ? 'var(--red)' : 'var(--emerald)',
+                        }}
+                      />
+                    </div>
+                    <span className="text-[10px] whitespace-nowrap text-[var(--text-faint)]">
+                      {fmtMoney(actualSafe)} / {fmtMoney(budget)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
