@@ -4,6 +4,7 @@ import {
   cashflowTotals,
   categoryColor,
   computeDelta,
+  debtCategoryColor,
   emergencyFundStatus,
   findSnapshotByMonth,
   fmtMonth,
@@ -12,6 +13,7 @@ import {
   goalProjection,
   shiftMonth,
   snapshotByCategory,
+  snapshotDebtByCategory,
   snapshotDebtTotal,
   snapshotNetWorth,
   snapshotTotal,
@@ -75,6 +77,8 @@ export default function FinancesOverview({ data }: { data: FinancesData }) {
 
   const byCat = snapshotByCategory(data, last)
   const catRows = Object.entries(byCat).sort((a, b) => b[1] - a[1])
+  const byDebtCat = snapshotDebtByCategory(data, last)
+  const debtRows = Object.entries(byDebtCat).sort((a, b) => b[1] - a[1])
 
   const ef = emergencyFundStatus(data)
   const goalProj = goalProjection(data)
@@ -143,6 +147,34 @@ export default function FinancesOverview({ data }: { data: FinancesData }) {
           })}
         </div>
       </div>
+
+      {data.debts.length > 0 && (
+        <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
+          <div className="mb-4 text-sm font-medium text-[var(--text-muted)]">Dettes</div>
+          <div className="space-y-3.5">
+            {debtRows.map(([cat, val]) => {
+              const pct = totalDebt > 0 ? (val / totalDebt) * 100 : 0
+              const color = debtCategoryColor(data, cat)
+              return (
+                <div key={cat}>
+                  <div className="mb-1.5 flex justify-between text-sm">
+                    <span className="flex items-center gap-2 font-medium">
+                      <span className="h-2 w-2 rounded-full" style={{ background: color }} />
+                      {cat}
+                    </span>
+                    <span className="font-display text-[var(--text-muted)]">
+                      {fmtMoney(val)} · {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {ef && ef.avgExpense > 0 && (
         <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">

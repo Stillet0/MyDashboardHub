@@ -3,8 +3,9 @@ import { useFinancesData } from '../../lib/useFinancesData'
 import FinancesOverview from './FinancesOverview'
 import FinancesAccounts from './FinancesAccounts'
 import FinancesUpdate from './FinancesUpdate'
+import FinancesDebts from './FinancesDebts'
 
-const TABS = ['Aperçu', 'Mise à jour', 'Comptes'] as const
+const TABS = ['Aperçu', 'Mise à jour', 'Comptes', 'Dettes'] as const
 type Tab = (typeof TABS)[number]
 
 export default function FinancesModule() {
@@ -43,8 +44,10 @@ export default function FinancesModule() {
         <FinancesOverview data={data} />
       ) : tab === 'Mise à jour' ? (
         <FinancesUpdate data={data} saving={saving} onSave={save} />
-      ) : (
+      ) : tab === 'Comptes' ? (
         <FinancesAccounts data={data} saving={saving} onSave={save} />
+      ) : (
+        <FinancesDebts data={data} saving={saving} onSave={save} />
       )}
     </div>
   )

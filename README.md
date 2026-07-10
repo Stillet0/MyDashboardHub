@@ -39,6 +39,7 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 - [x] Module Finances — onglet Aperçu (patrimoine net, évolution, répartition par catégorie, fonds d'urgence, objectif, cashflow du mois), inspiré du tracker patrimoine.html existant, données réelles importées
 - [x] Module Finances — onglet Comptes (ajout/modification/suppression de comptes, écriture directe dans `monhub-data`)
 - [x] Module Finances — onglet Mise à jour (relevé mensuel des comptes + cashflow revenus/dépenses par catégorie)
-- [ ] Module Finances — dettes, graphiques détaillés, historique en tableau, budgets
+- [x] Module Finances — onglet Dettes (ajout/modification/suppression, solde restant dû intégré à la mise à jour mensuelle et au calcul du patrimoine net)
+- [ ] Module Finances — graphiques détaillés, historique en tableau, budgets
 - [ ] Service worker / mode hors-ligne
 - [ ] Modules suivants (Agenda, Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)

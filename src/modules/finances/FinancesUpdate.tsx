@@ -6,6 +6,7 @@ import {
   findSnapshotByMonth,
   fmtMoney,
   fmtMonth,
+  getDebtPrefillValue,
   getPrefillValue,
   nextEntryMonth,
   parseSum,
@@ -24,6 +25,7 @@ type Props = {
 export default function FinancesUpdate({ data, saving, onSave }: Props) {
   const [month, setMonth] = useState(() => nextEntryMonth(data) || currentMonthKey())
   const [accountValues, setAccountValues] = useState<Record<string, string>>({})
+  const [debtValues, setDebtValues] = useState<Record<string, string>>({})
   const [incomeValues, setIncomeValues] = useState<Record<string, string>>({})
   const [expenseValues, setExpenseValues] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
@@ -41,6 +43,13 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
     })
     setAccountValues(nextAccountValues)
 
+    const nextDebtValues: Record<string, string> = {}
+    data.debts.forEach((d) => {
+      const v = getDebtPrefillValue(data, d.id, month)
+      nextDebtValues[d.id] = v === '' ? '' : String(v)
+    })
+    setDebtValues(nextDebtValues)
+
     const cf = cashflowForMonth(data, month)
     const nextIncome: Record<string, string> = {}
     data.incomeCategories.forEach((c) => {
@@ -55,7 +64,13 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
     setExpenseValues(nextExpense)
     setError(null)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [month, data.accounts.length, data.incomeCategories.length, data.expenseCategories.length])
+  }, [
+    month,
+    data.accounts.length,
+    data.debts.length,
+    data.incomeCategories.length,
+    data.expenseCategories.length,
+  ])
 
   const canGoNext = useMemo(() => month < currentMonthKey(), [month])
 
@@ -71,6 +86,18 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
         return
       }
       entries[acc.id] = v
+    }
+
+    const debtEntries: Record<string, number> = {}
+    for (const d of data.debts) {
+      const raw = debtValues[d.id] ?? ''
+      if (raw === '') continue
+      const v = parseSum(raw)
+      if (Number.isNaN(v)) {
+        setError(`Solde invalide pour "${d.name}".`)
+        return
+      }
+      debtEntries[d.id] = v
     }
 
     const income: Record<string, number> = {}
@@ -101,7 +128,7 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
       id: existingSnap?.id ?? 'snap_' + month,
       date: month,
       entries,
-      ...(existingSnap?.debtEntries ? { debtEntries: existingSnap.debtEntries } : {}),
+      ...(data.debts.length > 0 ? { debtEntries } : {}),
     }
     const newCashflow: Cashflow = {
       id: existingCf?.id ?? 'cf_' + month,
@@ -220,6 +247,29 @@ export default function FinancesUpdate({ data, saving, onSave }: Props) {
           Montants pré-remplis avec la valeur connue la plus proche.
         </p>
       </div>
+
+      {data.debts.length > 0 && (
+        <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
+          <div className="mb-3 text-sm font-medium text-[var(--text-muted)]">Dettes — solde restant dû</div>
+          <div className="divide-y divide-[var(--border)]">
+            {data.debts.map((d) => (
+              <div key={d.id} className="flex items-center justify-between gap-3 py-3">
+                <div>
+                  <div className="text-sm font-medium">{d.name}</div>
+                  <div className="text-xs text-[var(--text-muted)]">{d.category}</div>
+                </div>
+                <input
+                  value={debtValues[d.id] ?? ''}
+                  onChange={(e) => setDebtValues({ ...debtValues, [d.id]: e.target.value })}
+                  placeholder="0"
+                  inputMode="decimal"
+                  className="w-[140px] rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-right text-sm outline-none focus:border-[var(--gold)]"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
         <div className="mb-3 text-sm font-medium text-[var(--text-muted)]">Revenus par catégorie</div>
