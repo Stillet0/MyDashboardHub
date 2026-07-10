@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import TokenGate from './components/TokenGate'
 import { clearToken } from './lib/githubStore'
+import FinancesOverview from './modules/finances/FinancesOverview'
 
 const MODULES = [
   'Aujourd’hui',
@@ -13,31 +15,38 @@ const MODULES = [
   'Voyages',
 ] as const
 
+type ModuleName = (typeof MODULES)[number]
+
 function App() {
+  const [active, setActive] = useState<ModuleName>('Finances')
+
   return (
     <TokenGate>
-      <div className="min-h-svh bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        <header className="flex items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
-          <h1 className="text-lg font-semibold">MonHub</h1>
+      <div className="min-h-svh bg-[var(--bg)] text-[var(--text)]">
+        <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+          <h1 className="font-display text-lg font-bold">
+            Mon<span className="text-[var(--gold)]">Hub</span>
+          </h1>
           <button
             onClick={() => {
               clearToken()
               window.location.reload()
             }}
-            className="text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]"
           >
             Déconnexion
           </button>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-neutral-200 px-2 py-2 dark:border-neutral-800">
-          {MODULES.map((label, i) => (
+        <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)] px-2 py-2">
+          {MODULES.map((label) => (
             <button
               key={label}
-              className={`shrink-0 rounded-full px-3 py-1.5 text-sm font-medium ${
-                i === 0
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-900 dark:text-neutral-400'
+              onClick={() => setActive(label)}
+              className={`font-display shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+                active === label
+                  ? 'bg-[var(--surface-2)] text-[var(--text)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
               {label}
@@ -45,11 +54,14 @@ function App() {
           ))}
         </nav>
 
-        <main className="p-6">
-          <h2 className="text-2xl font-semibold">Hello MonHub 👋</h2>
-          <p className="mt-2 text-neutral-500 dark:text-neutral-400">
-            Le squelette est en place. Les modules seront ajoutés un par un.
-          </p>
+        <main className="mx-auto max-w-[880px] p-5 pb-20">
+          {active === 'Finances' ? (
+            <FinancesOverview />
+          ) : (
+            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
+              Module « {active} » à venir.
+            </div>
+          )}
         </main>
       </div>
     </TokenGate>
