@@ -45,5 +45,21 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 
 Module Finances considéré complet pour l'usage courant. Restent en option (non prioritaire) : graphiques avancés de performance/répartition dans le temps et comparaison à un indice — nécessiteraient de suivre en plus le détail des versements/plus-values par compte.
 
+- [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous)
 - [ ] Service worker / mode hors-ligne
-- [ ] Modules suivants (Agenda, Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)
+- [ ] Modules suivants (Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)
+
+## Connecter Google Calendar (optionnel)
+
+Le module Agenda peut afficher tes événements Google Calendar à venir, en lecture seule, en plus des événements créés dans MonHub. Configuration à faire une seule fois :
+
+1. Va sur la [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Crée un projet (ou utilise un projet existant)
+3. Active l'**API Google Calendar** (menu "APIs & Services" → "Library")
+4. Configure l'écran de consentement OAuth ("OAuth consent screen") : type **External**, statut **Testing**, et ajoute ton propre email comme "Test user"
+5. Crée un identifiant : "Credentials" → "Create Credentials" → **OAuth client ID** → type **Web application**
+   - "Authorized JavaScript origins" : `https://stillet0.github.io`
+6. Copie le **Client ID** généré (il ressemble à `xxxxx.apps.googleusercontent.com`, ce n'est pas un secret)
+7. Dans l'onglet Agenda de MonHub, colle ce Client ID et clique sur "Connecter"
+
+Rien n'est jamais écrit dans ton Google Calendar (scope lecture seule uniquement).
