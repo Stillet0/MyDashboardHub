@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-import { getFile } from '../../lib/githubStore'
 import {
   avgMonthlyGrowth,
   cashflowForMonth,
@@ -44,32 +42,7 @@ function DeltaBadge({ label, diff, pct }: { label: string; diff: number | null; 
   )
 }
 
-export default function FinancesOverview() {
-  const [data, setData] = useState<FinancesData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    getFile<FinancesData>('data/finances.json')
-      .then((res) => setData(res?.data ?? null))
-      .catch((e) => setError(e.message))
-  }, [])
-
-  if (error) {
-    return (
-      <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--red)]">
-        {error}
-      </div>
-    )
-  }
-
-  if (!data) {
-    return (
-      <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
-        Chargement…
-      </div>
-    )
-  }
-
+export default function FinancesOverview({ data }: { data: FinancesData }) {
   if (data.accounts.length === 0) {
     return (
       <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center text-[var(--text-muted)]">
@@ -265,10 +238,6 @@ export default function FinancesOverview() {
           </div>
         </div>
       )}
-
-      <p className="text-center text-xs text-[var(--text-faint)]">
-        Lecture seule pour l'instant — mise à jour des comptes et du cashflow à venir.
-      </p>
     </div>
   )
 }
