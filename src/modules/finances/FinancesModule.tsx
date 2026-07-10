@@ -5,8 +5,9 @@ import FinancesAccounts from './FinancesAccounts'
 import FinancesUpdate from './FinancesUpdate'
 import FinancesDebts from './FinancesDebts'
 import FinancesHistory from './FinancesHistory'
+import FinancesGoals from './FinancesGoals'
 
-const TABS = ['Aperçu', 'Mise à jour', 'Comptes', 'Dettes', 'Historique'] as const
+const TABS = ['Aperçu', 'Mise à jour', 'Comptes', 'Dettes', 'Historique', 'Objectifs & Budget'] as const
 type Tab = (typeof TABS)[number]
 
 export default function FinancesModule() {
@@ -49,8 +50,10 @@ export default function FinancesModule() {
         <FinancesAccounts data={data} saving={saving} onSave={save} />
       ) : tab === 'Dettes' ? (
         <FinancesDebts data={data} saving={saving} onSave={save} />
-      ) : (
+      ) : tab === 'Historique' ? (
         <FinancesHistory data={data} />
+      ) : (
+        <FinancesGoals data={data} saving={saving} onSave={save} />
       )}
     </div>
   )

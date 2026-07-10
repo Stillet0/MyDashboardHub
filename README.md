@@ -41,6 +41,9 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 - [x] Module Finances — onglet Mise à jour (relevé mensuel des comptes + cashflow revenus/dépenses par catégorie)
 - [x] Module Finances — onglet Dettes (ajout/modification/suppression, solde restant dû intégré à la mise à jour mensuelle et au calcul du patrimoine net)
 - [x] Module Finances — onglet Historique (tableau patrimoine net + cashflow, mois par mois avec variations)
-- [ ] Module Finances — graphiques détaillés (répartition dans le temps), budgets par catégorie
+- [x] Module Finances — onglet Objectifs & Budget (objectif de patrimoine net, budgets mensuels par catégorie avec suivi dans la Mise à jour, allocation cible vs réelle, indice de référence)
+
+Module Finances considéré complet pour l'usage courant. Restent en option (non prioritaire) : graphiques avancés de performance/répartition dans le temps et comparaison à un indice — nécessiteraient de suivre en plus le détail des versements/plus-values par compte.
+
 - [ ] Service worker / mode hors-ligne
 - [ ] Modules suivants (Agenda, Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)
