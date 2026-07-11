@@ -28,7 +28,7 @@ const MODULES = [
 type ModuleName = (typeof MODULES)[number]
 
 function App() {
-  const [active, setActive] = useState<ModuleName>('Finances')
+  const [active, setActive] = useState<ModuleName>('Aperçu')
   const { pending, syncing, syncNow } = useSyncManager()
 
   return (
