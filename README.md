@@ -46,8 +46,9 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 Module Finances considéré complet pour l'usage courant. Restent en option (non prioritaire) : graphiques avancés de performance/répartition dans le temps et comparaison à un indice — nécessiteraient de suivre en plus le détail des versements/plus-values par compte.
 
 - [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous)
+- [x] Module Tâches — todo-list avec catégories, priorités, échéances (avec détection de retard), section "Terminées" repliable
 - [ ] Service worker / mode hors-ligne
-- [ ] Modules suivants (Tâches, Habitudes, Voiture, Documents, Objectifs, Voyages)
+- [ ] Modules suivants (Habitudes, Voiture, Documents, Objectifs, Voyages)
 
 ## Connecter Google Calendar (optionnel)
 
