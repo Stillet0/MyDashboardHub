@@ -8,6 +8,7 @@ import HabitsModule from './modules/habits/HabitsModule'
 import CarModule from './modules/car/CarModule'
 import DocumentsModule from './modules/documents/DocumentsModule'
 import GoalsModule from './modules/goals/GoalsModule'
+import TravelModule from './modules/travel/TravelModule'
 
 const MODULES = [
   'Aujourd’hui',
@@ -75,6 +76,8 @@ function App() {
             <DocumentsModule />
           ) : active === 'Objectifs' ? (
             <GoalsModule />
+          ) : active === 'Voyages' ? (
+            <TravelModule />
           ) : (
             <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
               Module « {active} » à venir.

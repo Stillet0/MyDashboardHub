@@ -51,8 +51,11 @@ Module Finances considéré complet pour l'usage courant. Restent en option (non
 - [x] Module Voiture — véhicule(s), échéances (contrôle technique, vidange, assurance) avec alerte de retard, journal d'entretien avec coût total
 - [x] Module Documents — références importantes par catégorie avec dates d'expiration (alerte expiré/bientôt expiré) — pas de liens Drive (non souhaité)
 - [x] Module Objectifs — goals long terme avec progression manuelle, échéance optionnelle, étiquette de module lié (ex: Finances, Habitudes), section "Atteints" repliable
-- [ ] Service worker / mode hors-ligne
-- [ ] Module suivant (Voyages)
+- [x] Module Voyages — voyages (destination, dates, budget), dépenses par voyage avec suivi budget vs réalisé, voyages passés grisés
+
+Tous les modules de la feuille de route initiale sont en place.
+
+- [ ] Service worker / mode hors-ligne (dernière étape restante pour une installation PWA complète)
 
 ## Connecter Google Calendar (optionnel)
 
