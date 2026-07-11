@@ -5,6 +5,7 @@ import FinancesModule from './modules/finances/FinancesModule'
 import AgendaModule from './modules/agenda/AgendaModule'
 import TasksModule from './modules/tasks/TasksModule'
 import HabitsModule from './modules/habits/HabitsModule'
+import CarModule from './modules/car/CarModule'
 
 const MODULES = [
   'Aujourd’hui',
@@ -66,6 +67,8 @@ function App() {
             <TasksModule />
           ) : active === 'Habitudes' ? (
             <HabitsModule />
+          ) : active === 'Voiture' ? (
+            <CarModule />
           ) : (
             <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
               Module « {active} » à venir.
