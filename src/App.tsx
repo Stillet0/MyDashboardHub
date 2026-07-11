@@ -7,6 +7,7 @@ import TasksModule from './modules/tasks/TasksModule'
 import HabitsModule from './modules/habits/HabitsModule'
 import CarModule from './modules/car/CarModule'
 import DocumentsModule from './modules/documents/DocumentsModule'
+import HealthModule from './modules/health/HealthModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
 import OverviewModule from './modules/overview/OverviewModule'
@@ -14,13 +15,14 @@ import AiSettings from './components/AiSettings'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
-  'Aujourd’hui',
+  'Aperçu',
   'Finances',
   'Agenda',
   'Tâches',
   'Habitudes',
   'Voiture',
   'Documents',
+  'Santé',
   'Objectifs',
   'Voyages',
 ] as const
@@ -28,7 +30,7 @@ const MODULES = [
 type ModuleName = (typeof MODULES)[number]
 
 function App() {
-  const [active, setActive] = useState<ModuleName>('Finances')
+  const [active, setActive] = useState<ModuleName>('Aperçu')
   const { pending, syncing, syncNow } = useSyncManager()
 
   return (
@@ -82,7 +84,7 @@ function App() {
         </nav>
 
         <main className="mx-auto max-w-[880px] p-5 pb-20">
-          {active === 'Aujourd’hui' ? (
+          {active === 'Aperçu' ? (
             <OverviewModule onNavigate={(m) => setActive(m)} />
           ) : active === 'Finances' ? (
             <FinancesModule />
@@ -96,6 +98,8 @@ function App() {
             <CarModule />
           ) : active === 'Documents' ? (
             <DocumentsModule />
+          ) : active === 'Santé' ? (
+            <HealthModule />
           ) : active === 'Objectifs' ? (
             <GoalsModule />
           ) : active === 'Voyages' ? (
