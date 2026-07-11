@@ -14,7 +14,7 @@ import AiSettings from './components/AiSettings'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
-  'Aujourd’hui',
+  'Aperçu',
   'Finances',
   'Agenda',
   'Tâches',
@@ -82,7 +82,7 @@ function App() {
         </nav>
 
         <main className="mx-auto max-w-[880px] p-5 pb-20">
-          {active === 'Aujourd’hui' ? (
+          {active === 'Aperçu' ? (
             <OverviewModule onNavigate={(m) => setActive(m)} />
           ) : active === 'Finances' ? (
             <FinancesModule />

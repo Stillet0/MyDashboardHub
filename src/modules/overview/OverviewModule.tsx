@@ -85,7 +85,7 @@ export default function OverviewModule({ onNavigate }: Props) {
   return (
     <div>
       <div className="mb-4">
-        <h2 className="font-display text-xl font-normal">Aujourd'hui</h2>
+        <h2 className="font-display text-xl font-normal">Aperçu</h2>
         <div className="mt-2.5">
           <AiSuggestPanel
             label="Plan de la journée"

@@ -57,8 +57,8 @@ Module Finances désormais en parité complète avec le tracker patrimoine.html 
 Tous les modules de la feuille de route initiale sont en place.
 
 - [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
-- [x] Onglet "Aujourd'hui" — rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) + notifications navigateur/OS quand l'app est ouverte
-- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, plan de la journée priorisé sur l'onglet Aujourd'hui
+- [x] Onglet "Aperçu" — rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) + notifications navigateur/OS quand l'app est ouverte
+- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, plan de la journée priorisé sur l'onglet Aperçu
 
 ## Fonctionnalités intelligentes (IA)
 
@@ -67,7 +67,7 @@ MonHub peut utiliser l'API gratuite **Google Gemini** pour des fonctionnalités 
 - **Tâches** : « ✨ Décomposer en étapes » propose une liste de sous-étapes concrètes (ajoutables en un clic comme sous-tâches cochables), « ✨ Aide à démarrer » donne un conseil court pour débloquer une tâche.
 - **Objectifs** : « ✨ Générer un plan d'action » propose 4 à 7 étapes réalistes vers l'objectif, ajoutables comme checklist sur l'objectif.
 - **Voyages** : « ✨ Suggestions de visites » propose des lieux et activités incontournables pour la destination du voyage, ajoutables à une checklist du voyage.
-- **Aujourd'hui** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours.
+- **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours.
 
 C'est **entièrement optionnel** : sans clé configurée, ces boutons n'apparaissent simplement pas et le reste de l'app fonctionne normalement. Pour l'activer :
 
@@ -79,7 +79,7 @@ La clé reste uniquement dans le navigateur (`localStorage`), comme le token Git
 
 ## Rappels et notifications
 
-L'onglet "Aujourd'hui" regroupe tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
+L'onglet "Aperçu" regroupe tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
 
 Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vraie notification navigateur/OS pour chaque élément en retard ou du jour, à l'ouverture de l'app puis toutes les 30 minutes tant qu'elle reste ouverte.
 
