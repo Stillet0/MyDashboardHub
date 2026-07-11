@@ -57,7 +57,7 @@ Module Finances désormais en parité complète avec le tracker patrimoine.html 
 Tous les modules de la feuille de route initiale sont en place.
 
 - [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
-- [x] Onglet "Aperçu" — rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) + notifications navigateur/OS quand l'app est ouverte
+- [x] Onglet "Aperçu" — tableau de bord résumant chaque module en un coup d'œil (patrimoine net, prochain événement, tâches critiques, objectifs en cours, habitudes du jour, prochaine échéance voiture/document, prochain voyage), + rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) et notifications navigateur/OS quand l'app est ouverte
 - [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, plan de la journée priorisé sur l'onglet Aperçu
 
 ## Fonctionnalités intelligentes (IA)
@@ -77,9 +77,11 @@ C'est **entièrement optionnel** : sans clé configurée, ces boutons n'apparais
 
 La clé reste uniquement dans le navigateur (`localStorage`), comme le token GitHub. Les appels partent directement du navigateur vers l'API Gemini (modèle `gemini-2.5-flash`) — aucun serveur intermédiaire. Le quota gratuit de Gemini est large pour un usage personnel mais n'est pas illimité.
 
-## Rappels et notifications
+## Aperçu
 
-L'onglet "Aperçu" regroupe tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
+L'onglet "Aperçu" (ancien "Aujourd'hui") sert de page d'accueil : une grille de tuiles résume chaque module (Finances, Agenda, Tâches, Objectifs, Habitudes, Voiture, Documents, Voyages) — clique sur une tuile pour aller directement au module concerné.
+
+En dessous, les rappels regroupent tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
 
 Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vraie notification navigateur/OS pour chaque élément en retard ou du jour, à l'ouverture de l'app puis toutes les 30 minutes tant qu'elle reste ouverte.
 
