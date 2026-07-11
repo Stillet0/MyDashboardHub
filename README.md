@@ -50,8 +50,9 @@ Module Finances considéré complet pour l'usage courant. Restent en option (non
 - [x] Module Habitudes — suivi quotidien/hebdomadaire avec streaks et mini heatmap des 14 derniers jours
 - [x] Module Voiture — véhicule(s), échéances (contrôle technique, vidange, assurance) avec alerte de retard, journal d'entretien avec coût total
 - [x] Module Documents — références importantes par catégorie avec dates d'expiration (alerte expiré/bientôt expiré) — pas de liens Drive (non souhaité)
+- [x] Module Objectifs — goals long terme avec progression manuelle, échéance optionnelle, étiquette de module lié (ex: Finances, Habitudes), section "Atteints" repliable
 - [ ] Service worker / mode hors-ligne
-- [ ] Modules suivants (Objectifs, Voyages)
+- [ ] Module suivant (Voyages)
 
 ## Connecter Google Calendar (optionnel)
 
