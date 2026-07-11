@@ -9,6 +9,7 @@ import CarModule from './modules/car/CarModule'
 import DocumentsModule from './modules/documents/DocumentsModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
+import OverviewModule from './modules/overview/OverviewModule'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
@@ -79,7 +80,9 @@ function App() {
         </nav>
 
         <main className="mx-auto max-w-[880px] p-5 pb-20">
-          {active === 'Finances' ? (
+          {active === 'Aujourd’hui' ? (
+            <OverviewModule onNavigate={(m) => setActive(m)} />
+          ) : active === 'Finances' ? (
             <FinancesModule />
           ) : active === 'Agenda' ? (
             <AgendaModule />

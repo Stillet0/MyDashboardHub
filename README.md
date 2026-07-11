@@ -56,6 +56,15 @@ Module Finances considéré complet pour l'usage courant. Restent en option (non
 Tous les modules de la feuille de route initiale sont en place.
 
 - [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
+- [x] Onglet "Aujourd'hui" — rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) + notifications navigateur/OS quand l'app est ouverte
+
+## Rappels et notifications
+
+L'onglet "Aujourd'hui" regroupe tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
+
+Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vraie notification navigateur/OS pour chaque élément en retard ou du jour, à l'ouverture de l'app puis toutes les 30 minutes tant qu'elle reste ouverte.
+
+**Limite importante** : MonHub n'a pas de serveur, donc ces notifications ne fonctionnent que pendant que l'app est ouverte (ou en arrière-plan dans un onglet) — pas de réveil du téléphone app fermée. Un vrai push "app fermée" nécessiterait un serveur dédié (Web Push + VAPID), ce qui casserait le principe "zéro serveur, 100% gratuit" du projet.
 
 ## Mode hors-ligne et sauvegarde automatique
 
