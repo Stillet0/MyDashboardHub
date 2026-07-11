@@ -1,3 +1,5 @@
+import type { ChecklistItem } from './checklist'
+
 export type Priority = 'basse' | 'normale' | 'haute'
 
 export type Category = { name: string; color: string }
@@ -10,6 +12,7 @@ export type Task = {
   dueDate?: string // 'YYYY-MM-DD'
   done: boolean
   notes?: string
+  subtasks?: ChecklistItem[]
 }
 
 export type TasksData = {

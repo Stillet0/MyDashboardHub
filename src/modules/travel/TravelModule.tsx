@@ -11,6 +11,8 @@ import {
   type Trip,
   type TravelData,
 } from '../../lib/travel'
+import { newChecklistItem } from '../../lib/checklist'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 type TripDraft = { name: string; destination: string; startDate: string; endDate: string; budget: string }
 type ExpenseDraft = { label: string; amount: string; date: string }
@@ -134,6 +136,33 @@ export default function TravelModule() {
     )
   }
 
+  async function handleAddChecklistItems(t: Trip, items: string[]) {
+    if (!data || items.length === 0) return
+    const newItems = items.map((text) => newChecklistItem(text))
+    const nextTrips = data.trips.map((x) =>
+      x.id === t.id ? { ...x, checklist: [...(x.checklist ?? []), ...newItems] } : x,
+    )
+    await save({ ...data, trips: nextTrips }, `Voyages: suggestions IA ajoutées à "${t.name}"`)
+  }
+
+  async function toggleChecklistItem(t: Trip, itemId: string) {
+    if (!data) return
+    const nextTrips = data.trips.map((x) =>
+      x.id === t.id
+        ? { ...x, checklist: (x.checklist ?? []).map((c) => (c.id === itemId ? { ...c, done: !c.done } : c)) }
+        : x,
+    )
+    await save({ ...data, trips: nextTrips }, `Voyages: liste mise à jour`)
+  }
+
+  async function removeChecklistItem(t: Trip, itemId: string) {
+    if (!data) return
+    const nextTrips = data.trips.map((x) =>
+      x.id === t.id ? { ...x, checklist: (x.checklist ?? []).filter((c) => c.id !== itemId) } : x,
+    )
+    await save({ ...data, trips: nextTrips }, `Voyages: élément supprimé`)
+  }
+
   function renderTripCard(t: Trip, allData: TravelData) {
     const past = isPast(t)
     const spent = totalSpent(allData, t.id)
@@ -253,6 +282,44 @@ export default function TravelModule() {
         )}
         {t.budget === undefined && spent > 0 && (
           <div className="mt-3 text-xs text-[var(--text-muted)]">{fmtEuro(spent)} dépensés</div>
+        )}
+
+        {t.checklist && t.checklist.length > 0 && (
+          <div className="mt-3 space-y-1">
+            {t.checklist.map((c) => (
+              <div key={c.id} className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => toggleChecklistItem(t, c.id)}
+                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                    c.done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+                  }`}
+                >
+                  {c.done && <span className="text-[9px] text-[#08090b]">✓</span>}
+                </button>
+                <span className={`flex-1 ${c.done ? 'text-[var(--text-faint)] line-through' : 'text-[var(--text-muted)]'}`}>
+                  {c.text}
+                </span>
+                <button
+                  onClick={() => removeChecklistItem(t, c.id)}
+                  className="text-[var(--text-faint)] hover:text-[var(--red)]"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!past && t.destination && (
+          <div className="mt-3">
+            <AiSuggestPanel
+              label="Suggestions de visites"
+              system="Tu es un guide de voyage. Réponds uniquement par une liste numérotée de 6 à 10 lieux, activités ou visites incontournables pour cette destination, en français, sans introduction ni conclusion."
+              prompt={`Destination : ${t.destination}${t.startDate || t.endDate ? `\nDates : ${fmtDateRange(t.startDate, t.endDate)}` : ''}\nPropose des lieux et activités à visiter sur place.`}
+              applyLabel="Ajouter à ma liste"
+              onApply={(items) => handleAddChecklistItems(t, items)}
+            />
+          </div>
         )}
 
         <button

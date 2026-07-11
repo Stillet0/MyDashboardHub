@@ -1,3 +1,5 @@
+import type { ChecklistItem } from './checklist'
+
 export const LINKED_MODULES = [
   'Finances',
   'Agenda',
@@ -18,6 +20,7 @@ export type Goal = {
   linkedModule?: LinkedModule
   progress: number // 0-100
   done: boolean
+  steps?: ChecklistItem[]
 }
 
 export type GoalsData = {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { cacheRead, fetchAndCache, hasPendingChanges, isFlushing, markDirty, onSyncStateChange } from './syncStore'
+import { cacheRead, fetchAndCache, isDirty, isFlushing, markDirty, onSyncStateChange } from './syncStore'
 
 /**
  * Local-first data hook: reads instantly from the localStorage cache (works offline),
@@ -27,7 +27,7 @@ export function useSyncedJson<T>(path: string, defaultValue: T) {
     fetchAndCache(path, defaultValue)
       .then((remote) => {
         if (cancelled) return
-        if (!hasPendingChanges()) setData(remote)
+        if (!isDirty(path)) setData(remote)
         setLoading(false)
       })
       .catch((e) => {

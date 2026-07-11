@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useGoalsData } from '../../lib/useGoalsData'
 import { fmtDate, isOverdue, sortedGoals, LINKED_MODULES, type Goal, type LinkedModule } from '../../lib/goals'
+import { newChecklistItem } from '../../lib/checklist'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 type Draft = {
   title: string
@@ -102,6 +104,33 @@ export default function GoalsModule() {
     if (!data) return
     if (!window.confirm(`Supprimer "${g.title}" ? Cette action est irréversible.`)) return
     await save({ goals: data.goals.filter((x) => x.id !== g.id) }, `Objectifs: suppression de "${g.title}"`)
+  }
+
+  async function handleAddSteps(g: Goal, items: string[]) {
+    if (!data || items.length === 0) return
+    const newItems = items.map((text) => newChecklistItem(text))
+    const nextGoals = data.goals.map((x) =>
+      x.id === g.id ? { ...x, steps: [...(x.steps ?? []), ...newItems] } : x,
+    )
+    await save({ goals: nextGoals }, `Objectifs: plan d'action IA ajouté à "${g.title}"`)
+  }
+
+  async function toggleStep(g: Goal, stepId: string) {
+    if (!data) return
+    const nextGoals = data.goals.map((x) =>
+      x.id === g.id
+        ? { ...x, steps: (x.steps ?? []).map((s) => (s.id === stepId ? { ...s, done: !s.done } : s)) }
+        : x,
+    )
+    await save({ goals: nextGoals }, `Objectifs: étape mise à jour`)
+  }
+
+  async function removeStep(g: Goal, stepId: string) {
+    if (!data) return
+    const nextGoals = data.goals.map((x) =>
+      x.id === g.id ? { ...x, steps: (x.steps ?? []).filter((s) => s.id !== stepId) } : x,
+    )
+    await save({ goals: nextGoals }, `Objectifs: étape supprimée`)
   }
 
   async function toggleDone(g: Goal) {
@@ -243,6 +272,41 @@ export default function GoalsModule() {
             <span className="font-display w-9 text-right text-xs text-[var(--text-muted)]">
               {g.progress}%
             </span>
+          </div>
+        )}
+
+        {g.steps && g.steps.length > 0 && (
+          <div className="mt-2.5 ml-8 space-y-1">
+            {g.steps.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => toggleStep(g, s.id)}
+                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                    s.done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+                  }`}
+                >
+                  {s.done && <span className="text-[9px] text-[#08090b]">✓</span>}
+                </button>
+                <span className={`flex-1 ${s.done ? 'text-[var(--text-faint)] line-through' : 'text-[var(--text-muted)]'}`}>
+                  {s.text}
+                </span>
+                <button onClick={() => removeStep(g, s.id)} className="text-[var(--text-faint)] hover:text-[var(--red)]">
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!g.done && (
+          <div className="mt-2.5 ml-8">
+            <AiSuggestPanel
+              label="Générer un plan d'action"
+              system="Tu es un coach en planification d'objectifs. Réponds uniquement par une liste numérotée de 4 à 7 étapes concrètes et réalistes pour atteindre l'objectif, en français, sans introduction ni conclusion."
+              prompt={`Objectif : ${g.title}${g.description ? `\nDescription : ${g.description}` : ''}${g.targetDate ? `\nÉchéance visée : ${fmtDate(g.targetDate)}` : ''}\nProgression actuelle : ${g.progress}%.\nPropose un plan d'action étape par étape.`}
+              applyLabel="Ajouter au plan d'action"
+              onApply={(items) => handleAddSteps(g, items)}
+            />
           </div>
         )}
       </div>
