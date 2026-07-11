@@ -1,10 +1,12 @@
 export type Account = { id: string; name: string; category: string; value: number }
 export type Category = { name: string; color: string }
+export type PerfOverride = { totalInvested?: number; gainEur?: number; pct?: number }
 export type Snapshot = {
   id: string
   date: string // 'YYYY-MM'
   entries: Record<string, number>
   debtEntries?: Record<string, number>
+  perfOverrides?: Record<string, PerfOverride>
 }
 export type Cashflow = {
   id: string
@@ -247,4 +249,261 @@ export function goalProjection(data: FinancesData) {
       ? Math.min(100, Math.max(0, (current / data.goal.targetAmount) * 100))
       : 0
   return { current, remaining, growth, monthsToGoal, projectedDate, progressPct }
+}
+
+// ---------------------------------------------------------------------------
+// Performance tracking (rendement) — money-weighted gain/% per account,
+// category, or the whole portfolio, using the person's own broker-reported
+// figures when available and falling back to an estimate from the account's
+// value deltas and cashflow movements otherwise.
+// ---------------------------------------------------------------------------
+
+export const PERFORMANCE_EXCLUDED_CATEGORIES = ['Cash']
+export const NO_COMPUTED_FALLBACK_CATEGORIES = ['Livrets', 'PEL']
+
+/** Value change of a set of accounts for a month, minus that month's net contributions/withdrawals. */
+export function performanceForMonthAccounts(
+  data: FinancesData,
+  accIds: string[],
+  monthKey: string,
+): number | null {
+  const snaps = sortedSnapshots(data)
+  const idx = snaps.findIndex((s) => s.date === monthKey)
+  if (idx <= 0) return null
+  const cur = accIds.reduce((s, id) => s + (Number(snaps[idx].entries[id]) || 0), 0)
+  const prev = accIds.reduce((s, id) => s + (Number(snaps[idx - 1].entries[id]) || 0), 0)
+  const cf = cashflowForMonth(data, monthKey)
+  const movements = cf ? accIds.reduce((s, id) => s + (Number(cf.movements[id]) || 0), 0) : 0
+  return cur - prev - movements
+}
+
+export function computedCumulativeGainEur(
+  data: FinancesData,
+  accIds: string[],
+  uptoMonthKey?: string,
+): number | null {
+  const snaps = sortedSnapshots(data).filter((s) => !uptoMonthKey || s.date <= uptoMonthKey)
+  if (accIds.length === 0 || snaps.length < 2) return null
+  let cumGain = 0
+  for (let i = 1; i < snaps.length; i++) {
+    const perf = performanceForMonthAccounts(data, accIds, snaps[i].date)
+    if (perf !== null) cumGain += perf
+  }
+  return cumGain
+}
+
+export function computedCumulativePercent(
+  data: FinancesData,
+  accIds: string[],
+  uptoMonthKey?: string,
+): number | null {
+  const snaps = sortedSnapshots(data).filter((s) => !uptoMonthKey || s.date <= uptoMonthKey)
+  if (accIds.length === 0 || snaps.length < 2) return null
+  let cumInvested = 0
+  for (let i = 1; i < snaps.length; i++) {
+    const cf = cashflowForMonth(data, snaps[i].date)
+    if (cf) cumInvested += accIds.reduce((s, id) => s + (Number(cf.movements[id]) || 0), 0)
+  }
+  const cumGain = computedCumulativeGainEur(data, accIds, uptoMonthKey)
+  if (cumGain === null || cumInvested <= 0) return null
+  return (cumGain / cumInvested) * 100
+}
+
+/** Most recent broker-reported figures for an account, at or before a given month. */
+export function getLatestOverride(
+  data: FinancesData,
+  accountId: string,
+  uptoMonthKey?: string,
+): (PerfOverride & { date: string }) | null {
+  const snaps = [...data.snapshots]
+    .filter((s) => !uptoMonthKey || s.date <= uptoMonthKey)
+    .sort((a, b) => b.date.localeCompare(a.date))
+  for (const s of snaps) {
+    const o = s.perfOverrides?.[accountId]
+    if (o && (o.totalInvested !== undefined || o.gainEur !== undefined || o.pct !== undefined)) {
+      return { ...o, date: s.date }
+    }
+  }
+  return null
+}
+
+export function getLatestOverrideBefore(
+  data: FinancesData,
+  accountId: string,
+  monthKey: string,
+): { totalInvested: number; date: string } | null {
+  const snaps = [...data.snapshots]
+    .filter((s) => s.date < monthKey)
+    .sort((a, b) => b.date.localeCompare(a.date))
+  for (const s of snaps) {
+    const o = s.perfOverrides?.[accountId]
+    if (o?.totalInvested !== undefined) return { totalInvested: o.totalInvested, date: s.date }
+  }
+  return null
+}
+
+/** Auto-suggests this month's contribution/withdrawal from the change in "totalInvested". */
+export function computeSuggestedMovement(
+  data: FinancesData,
+  accountId: string,
+  monthKey: string,
+  currentInvestedValue: number | undefined,
+): number | null {
+  if (currentInvestedValue === undefined || Number.isNaN(currentInvestedValue)) return null
+  const prev = getLatestOverrideBefore(data, accountId, monthKey)
+  if (!prev) return null
+  return currentInvestedValue - prev.totalInvested
+}
+
+type EffectiveGain = { gainEur: number | null; pct: number | null; source: 'manual' | 'computed'; date?: string }
+
+export function accountEffectiveGain(
+  data: FinancesData,
+  accountId: string,
+  monthKey?: string,
+): EffectiveGain | null {
+  const snaps = sortedSnapshots(data)
+  const resolvedMonth = monthKey ?? (snaps.length ? snaps[snaps.length - 1].date : undefined)
+  const snap = resolvedMonth ? snaps.find((s) => s.date === resolvedMonth) : undefined
+  const curVal = snap ? Number(snap.entries[accountId]) || 0 : 0
+  const ov = getLatestOverride(data, accountId, resolvedMonth)
+  if (ov) {
+    let gainEur = ov.gainEur
+    let pct = ov.pct
+    if (gainEur === undefined && ov.totalInvested !== undefined) {
+      gainEur = curVal - ov.totalInvested
+    }
+    if (pct === undefined && gainEur !== undefined && ov.totalInvested) {
+      pct = (gainEur / ov.totalInvested) * 100
+    }
+    if (gainEur === undefined && pct !== undefined && 100 + pct !== 0) {
+      gainEur = (curVal * pct) / (100 + pct)
+    }
+    if (gainEur !== undefined || pct !== undefined) {
+      return {
+        gainEur: gainEur ?? null,
+        pct: pct ?? null,
+        source: 'manual',
+        date: ov.date,
+      }
+    }
+  }
+  const acc = data.accounts.find((a) => a.id === accountId)
+  if (acc && NO_COMPUTED_FALLBACK_CATEGORIES.includes(acc.category)) return null
+  return {
+    gainEur: computedCumulativeGainEur(data, [accountId], resolvedMonth),
+    pct: computedCumulativePercent(data, [accountId], resolvedMonth),
+    source: 'computed',
+  }
+}
+
+export function effectiveForAccounts(
+  data: FinancesData,
+  accIds: string[],
+  monthKey?: string,
+): { gainEur: number | null; pct: number | null; mixed: boolean } | null {
+  if (!accIds || accIds.length === 0) return null
+  const snaps = sortedSnapshots(data)
+  if (snaps.length === 0) return null
+  const resolvedMonth = monthKey ?? snaps[snaps.length - 1].date
+  const snap = snaps.find((s) => s.date === resolvedMonth)
+  if (!snap) return null
+  let gainSum = 0
+  let hasGain = false
+  let weightedPct = 0
+  let weightTotal = 0
+  let anyManual = false
+  accIds.forEach((id) => {
+    const eff = accountEffectiveGain(data, id, resolvedMonth)
+    if (!eff) return
+    if (eff.source === 'manual') anyManual = true
+    if (eff.gainEur !== null) {
+      gainSum += eff.gainEur
+      hasGain = true
+    }
+    const val = Number(snap.entries[id]) || 0
+    if (eff.pct !== null && val > 0) {
+      weightedPct += eff.pct * val
+      weightTotal += val
+    }
+  })
+  if (!hasGain && weightTotal === 0) return null
+  return {
+    gainEur: hasGain ? gainSum : null,
+    pct: weightTotal > 0 ? weightedPct / weightTotal : null,
+    mixed: anyManual,
+  }
+}
+
+export function categoryEffective(data: FinancesData, catName: string, monthKey?: string) {
+  if (PERFORMANCE_EXCLUDED_CATEGORIES.includes(catName)) return null
+  return effectiveForAccounts(
+    data,
+    data.accounts.filter((a) => a.category === catName).map((a) => a.id),
+    monthKey,
+  )
+}
+
+export function totalEffective(data: FinancesData, monthKey?: string) {
+  const accIds = data.accounts
+    .filter((a) => !PERFORMANCE_EXCLUDED_CATEGORIES.includes(a.category))
+    .map((a) => a.id)
+  return effectiveForAccounts(data, accIds, monthKey)
+}
+
+export type PctPoint = { date: string; pct: number | null }
+
+export function categoryPercentSeries(data: FinancesData, catName: string): PctPoint[] {
+  const snaps = sortedSnapshots(data)
+  const accIds = data.accounts.filter((a) => a.category === catName).map((a) => a.id)
+  if (accIds.length === 0) return []
+  return snaps.map((snap, idx) => {
+    if (idx === 0) return { date: snap.date, pct: null }
+    let weightedPct = 0
+    let weightTotal = 0
+    accIds.forEach((id) => {
+      const eff = accountEffectiveGain(data, id, snap.date)
+      const pct = eff?.pct
+      if (pct === null || pct === undefined || !isFinite(pct)) return
+      const val = Number(snap.entries[id]) || 0
+      if (val > 0) {
+        weightedPct += pct * val
+        weightTotal += val
+      }
+    })
+    return { date: snap.date, pct: weightTotal > 0 ? weightedPct / weightTotal : null }
+  })
+}
+
+export function totalPercentSeries(data: FinancesData): PctPoint[] {
+  const snaps = sortedSnapshots(data)
+  const accIds = data.accounts
+    .filter((a) => !PERFORMANCE_EXCLUDED_CATEGORIES.includes(a.category))
+    .map((a) => a.id)
+  if (accIds.length === 0) return []
+  return snaps.map((snap, idx) => {
+    if (idx === 0) return { date: snap.date, pct: null }
+    let weightedPct = 0
+    let weightTotal = 0
+    accIds.forEach((id) => {
+      const eff = accountEffectiveGain(data, id, snap.date)
+      const pct = eff?.pct
+      if (pct === null || pct === undefined || !isFinite(pct)) return
+      const val = Number(snap.entries[id]) || 0
+      if (val > 0) {
+        weightedPct += pct * val
+        weightTotal += val
+      }
+    })
+    return { date: snap.date, pct: weightTotal > 0 ? weightedPct / weightTotal : null }
+  })
+}
+
+export function benchmarkCumulativeSeries(data: FinancesData): PctPoint[] {
+  const snaps = sortedSnapshots(data)
+  const r = Number(data.benchmarkAvgMonthlyReturn) || 0
+  return snaps.map((snap, idx) => {
+    if (idx === 0) return { date: snap.date, pct: null }
+    return { date: snap.date, pct: (Math.pow(1 + r / 100, idx) - 1) * 100 }
+  })
 }

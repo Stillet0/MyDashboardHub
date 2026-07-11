@@ -18,6 +18,7 @@ import {
   snapshotNetWorth,
   snapshotTotal,
   sortedSnapshots,
+  totalEffective,
   type FinancesData,
 } from '../../lib/finances'
 import EvolutionChart from './EvolutionChart'
@@ -85,6 +86,7 @@ export default function FinancesOverview({ data }: { data: FinancesData }) {
   const growth = avgMonthlyGrowth(data)
   const cf = cashflowForMonth(data, last.date)
   const cfTotals = cashflowTotals(cf)
+  const perf = totalEffective(data)
 
   return (
     <div className="space-y-4">
@@ -105,6 +107,26 @@ export default function FinancesOverview({ data }: { data: FinancesData }) {
             {totalDebt > 0 && (
               <div className="mt-1 text-sm text-[var(--text-muted)]">
                 Patrimoine brut : {fmtMoney(totalGross)} · Dettes : -{fmtMoney(totalDebt)}
+              </div>
+            )}
+            {perf && (perf.gainEur !== null || perf.pct !== null) && (
+              <div
+                className={`mt-1 text-sm ${
+                  (perf.gainEur ?? 0) > 0.5
+                    ? 'text-[var(--emerald)]'
+                    : (perf.gainEur ?? 0) < -0.5
+                      ? 'text-[var(--red)]'
+                      : 'text-[var(--text-muted)]'
+                } opacity-85`}
+              >
+                Performance des placements :{' '}
+                {[
+                  perf.gainEur !== null ? `${perf.gainEur >= 0 ? '+' : ''}${fmtMoney(perf.gainEur)}` : null,
+                  perf.pct !== null ? `${perf.pct >= 0 ? '+' : ''}${perf.pct.toFixed(1)}%` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+                {perf.mixed ? ' (dont saisi)' : ' (estimé)'}
               </div>
             )}
           </div>
