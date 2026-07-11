@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { checkToken, getToken, setToken } from '../lib/githubStore'
+import Logo from './Logo'
 
 export default function TokenGate({ children }: { children: ReactNode }) {
   const [token, setLocalToken] = useState(() => getToken())
@@ -32,7 +33,8 @@ export default function TokenGate({ children }: { children: ReactNode }) {
         onSubmit={handleSubmit}
         className="w-full max-w-sm rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6"
       >
-        <h1 className="font-display text-lg font-semibold">
+        <h1 className="font-display flex items-center gap-2 text-lg font-semibold">
+          <Logo size={26} />
           Connexion à Mon<span className="text-[var(--gold)]">Hub</span>
         </h1>
         <p className="mt-2 text-sm text-[var(--text-muted)]">

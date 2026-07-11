@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import TokenGate from './components/TokenGate'
+import Logo from './components/Logo'
 import { clearToken } from './lib/githubStore'
 import FinancesModule from './modules/finances/FinancesModule'
 import AgendaModule from './modules/agenda/AgendaModule'
@@ -37,7 +38,8 @@ function App() {
     <TokenGate>
       <div className="min-h-svh bg-[var(--bg)] text-[var(--text)]">
         <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-          <h1 className="font-display text-lg font-bold">
+          <h1 className="font-display flex items-center gap-2 text-lg font-bold">
+            <Logo size={26} />
             Mon<span className="text-[var(--gold)]">Hub</span>
           </h1>
           <div className="flex items-center gap-3">
