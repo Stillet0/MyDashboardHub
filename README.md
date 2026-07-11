@@ -55,7 +55,17 @@ Module Finances considéré complet pour l'usage courant. Restent en option (non
 
 Tous les modules de la feuille de route initiale sont en place.
 
-- [ ] Service worker / mode hors-ligne (dernière étape restante pour une installation PWA complète)
+- [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
+
+## Mode hors-ligne et sauvegarde automatique
+
+- **Hors-ligne** : un service worker (`vite-plugin-pwa`) met en cache l'app elle-même (JS/CSS/HTML), donc MonHub s'ouvre même sans réseau. Chaque module garde aussi une copie de ses dernières données dans le navigateur (`localStorage`), affichée instantanément à l'ouverture — avant même la réponse de l'API GitHub.
+- **Sauvegarde automatique** : les modifications ne sont plus envoyées à `monhub-data` à chaque clic, mais mises en file d'attente localement puis synchronisées :
+  - automatiquement toutes les **5 minutes**,
+  - automatiquement à la **fermeture/mise en arrière-plan de l'app** (changement d'onglet, verrouillage du téléphone, fermeture) via les événements `visibilitychange`/`pagehide`,
+  - ou manuellement en cliquant sur l'indicateur "● Non synchronisé" en haut de l'écran.
+
+Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Synchronisation…`) est visible en permanence dans l'en-tête. Comme avant, chaque écriture est protégée par le SHA du fichier : si un autre appareil a modifié la donnée entre-temps, l'écriture est refusée plutôt que d'écraser silencieusement.
 
 ## Connecter Google Calendar (optionnel)
 

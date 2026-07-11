@@ -61,6 +61,7 @@ export async function putFile(
   data: unknown,
   sha: string | undefined,
   message: string,
+  keepalive = false,
 ): Promise<{ sha: string }> {
   const res = await fetch(
     `https://api.github.com/repos/${DATA_OWNER}/${DATA_REPO}/contents/${path}`,
@@ -72,6 +73,7 @@ export async function putFile(
         content: utf8ToBase64(JSON.stringify(data, null, 2)),
         sha,
       }),
+      keepalive,
     },
   )
   if (res.status === 409) {

@@ -9,6 +9,7 @@ import CarModule from './modules/car/CarModule'
 import DocumentsModule from './modules/documents/DocumentsModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
+import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
   'Aujourd’hui',
@@ -26,6 +27,7 @@ type ModuleName = (typeof MODULES)[number]
 
 function App() {
   const [active, setActive] = useState<ModuleName>('Finances')
+  const { pending, syncing, syncNow } = useSyncManager()
 
   return (
     <TokenGate>
@@ -34,15 +36,30 @@ function App() {
           <h1 className="font-display text-lg font-bold">
             Mon<span className="text-[var(--gold)]">Hub</span>
           </h1>
-          <button
-            onClick={() => {
-              clearToken()
-              window.location.reload()
-            }}
-            className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]"
-          >
-            Déconnexion
-          </button>
+          <div className="flex items-center gap-3">
+            {syncing ? (
+              <span className="text-xs text-[var(--text-faint)]">Synchronisation…</span>
+            ) : pending ? (
+              <button
+                onClick={syncNow}
+                className="text-xs text-[var(--gold)] hover:underline"
+                title="Des modifications sont en attente d'envoi vers monhub-data"
+              >
+                ● Non synchronisé — synchroniser
+              </button>
+            ) : (
+              <span className="text-xs text-[var(--text-faint)]">✓ Synchronisé</span>
+            )}
+            <button
+              onClick={() => {
+                clearToken()
+                window.location.reload()
+              }}
+              className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]"
+            >
+              Déconnexion
+            </button>
+          </div>
         </header>
 
         <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)] px-2 py-2">
