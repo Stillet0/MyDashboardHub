@@ -53,6 +53,7 @@ Module Finances désormais en parité complète avec le tracker patrimoine.html 
 - [x] Module Documents — références importantes par catégorie avec dates d'expiration (alerte expiré/bientôt expiré) — pas de liens Drive (non souhaité)
 - [x] Module Objectifs — goals long terme avec progression manuelle, échéance optionnelle, étiquette de module lié (ex: Finances, Habitudes), section "Atteints" repliable
 - [x] Module Voyages — voyages (destination, dates, budget), dépenses par voyage avec suivi budget vs réalisé, voyages passés grisés
+- [x] Module Santé — rendez-vous médicaux (praticien, date/heure) et traitements en cours avec date de renouvellement d'ordonnance, intégrés aux rappels et au tableau de bord Aperçu
 
 Tous les modules de la feuille de route initiale sont en place.
 

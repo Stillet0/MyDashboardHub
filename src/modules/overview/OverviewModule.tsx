@@ -7,6 +7,7 @@ import { useAgendaData } from '../../lib/useAgendaData'
 import { useHabitsData } from '../../lib/useHabitsData'
 import { useFinancesData } from '../../lib/useFinancesData'
 import { useTravelData } from '../../lib/useTravelData'
+import { useHealthData } from '../../lib/useHealthData'
 import { fetchUpcomingGoogleEvents, isConnected as isGoogleConnected } from '../../lib/googleCalendar'
 import { buildReminders, type Reminder, type Urgency } from '../../lib/reminders'
 import { getPermission, isNotificationSupported, notifyNewReminders, requestPermission } from '../../lib/notifications'
@@ -32,7 +33,16 @@ const URGENCY_COLOR: Record<Urgency, string> = {
   soon: 'var(--text-muted)',
 }
 
-type ModuleLink = 'Finances' | 'Agenda' | 'Tâches' | 'Habitudes' | 'Voiture' | 'Documents' | 'Objectifs' | 'Voyages'
+type ModuleLink =
+  | 'Finances'
+  | 'Agenda'
+  | 'Tâches'
+  | 'Habitudes'
+  | 'Voiture'
+  | 'Documents'
+  | 'Santé'
+  | 'Objectifs'
+  | 'Voyages'
 type Props = { onNavigate: (module: ModuleLink) => void }
 
 function Tile({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -56,6 +66,7 @@ export default function OverviewModule({ onNavigate }: Props) {
   const { data: habits } = useHabitsData()
   const { data: finances } = useFinancesData()
   const { data: travel } = useTravelData()
+  const { data: health } = useHealthData()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
   const [permission, setPermission] = useState(getPermission())
 
@@ -78,6 +89,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     agenda: agenda ?? undefined,
     googleEvents,
     habits: habits ?? undefined,
+    health: health ?? undefined,
   })
 
   useEffect(() => {
@@ -123,9 +135,10 @@ export default function OverviewModule({ onNavigate }: Props) {
   const habitsList = habits?.habits ?? []
   const habitsDoneCount = habitsList.filter((h) => isDoneThisPeriod(h)).length
 
-  // Voiture / Documents : prochaine échéance issue des rappels déjà calculés
+  // Voiture / Documents / Santé : prochaine échéance issue des rappels déjà calculés
   const nextCarReminder = reminders.find((r) => r.module === 'Voiture')
   const nextDocReminder = reminders.find((r) => r.module === 'Documents')
+  const nextHealthReminder = reminders.find((r) => r.module === 'Santé')
 
   // Voyages : prochain voyage à venir
   const nextTrip = travel ? sortedTrips(travel.trips).find((t) => !isTripPast(t)) : undefined
@@ -195,6 +208,19 @@ export default function OverviewModule({ onNavigate }: Props) {
             </>
           ) : (
             <div className="text-sm text-[var(--text-muted)]">Aucune tâche urgente</div>
+          )}
+        </Tile>
+
+        <Tile label="Santé" onClick={() => onNavigate('Santé')}>
+          {nextHealthReminder ? (
+            <>
+              <div className="text-sm font-medium">{nextHealthReminder.title}</div>
+              <div className="truncate text-xs text-[var(--text-muted)]">
+                {[nextHealthReminder.detail, URGENCY_LABEL[nextHealthReminder.urgency]].filter(Boolean).join(' · ')}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-[var(--text-muted)]">RAS</div>
           )}
         </Tile>
 

@@ -7,6 +7,7 @@ import TasksModule from './modules/tasks/TasksModule'
 import HabitsModule from './modules/habits/HabitsModule'
 import CarModule from './modules/car/CarModule'
 import DocumentsModule from './modules/documents/DocumentsModule'
+import HealthModule from './modules/health/HealthModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
 import OverviewModule from './modules/overview/OverviewModule'
@@ -21,6 +22,7 @@ const MODULES = [
   'Habitudes',
   'Voiture',
   'Documents',
+  'Santé',
   'Objectifs',
   'Voyages',
 ] as const
@@ -96,6 +98,8 @@ function App() {
             <CarModule />
           ) : active === 'Documents' ? (
             <DocumentsModule />
+          ) : active === 'Santé' ? (
+            <HealthModule />
           ) : active === 'Objectifs' ? (
             <GoalsModule />
           ) : active === 'Voyages' ? (

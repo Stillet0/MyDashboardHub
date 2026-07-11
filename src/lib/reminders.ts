@@ -4,12 +4,13 @@ import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
 import type { HabitsData } from './habits'
+import type { HealthData } from './health'
 
 export type Urgency = 'overdue' | 'today' | 'soon'
 
 export type Reminder = {
   id: string
-  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes'
+  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé'
   title: string
   detail?: string
   dueDate?: string
@@ -46,6 +47,7 @@ export function buildReminders(input: {
   agenda?: AgendaData
   googleEvents?: AgendaEvent[]
   habits?: HabitsData
+  health?: HealthData
 }): Reminder[] {
   const out: Reminder[] = []
 
@@ -129,6 +131,34 @@ export function buildReminders(input: {
       detail: e.time ? `à ${e.time}` : undefined,
       dueDate: e.date,
       urgency: 'today',
+    })
+  })
+
+  input.health?.appointments.forEach((a) => {
+    if (a.done) return
+    const urgency = urgencyForDate(a.date)
+    if (!urgency) return
+    out.push({
+      id: 'health_appt_' + a.id,
+      module: 'Santé',
+      title: a.title,
+      detail: a.practitioner,
+      dueDate: a.date,
+      urgency,
+    })
+  })
+
+  input.health?.treatments.forEach((t) => {
+    if (!t.renewalDate) return
+    const urgency = urgencyForDate(t.renewalDate)
+    if (!urgency) return
+    out.push({
+      id: 'health_trt_' + t.id,
+      module: 'Santé',
+      title: `Renouveler : ${t.name}`,
+      detail: t.dosage,
+      dueDate: t.renewalDate,
+      urgency,
     })
   })
 
