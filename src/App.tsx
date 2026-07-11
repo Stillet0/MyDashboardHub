@@ -63,12 +63,12 @@ function App() {
           </div>
         </header>
 
-        <nav className="flex gap-1 overflow-x-auto border-b border-[var(--border)] px-2 py-2">
+        <nav className="flex flex-wrap gap-1 border-b border-[var(--border)] px-2 py-2">
           {MODULES.map((label) => (
             <button
               key={label}
               onClick={() => setActive(label)}
-              className={`font-display shrink-0 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`font-display rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
                 active === label
                   ? 'bg-[var(--surface-2)] text-[var(--text)]'
                   : 'text-[var(--text-muted)] hover:text-[var(--text)]'
