@@ -4,6 +4,7 @@ import { clearToken } from './lib/githubStore'
 import FinancesModule from './modules/finances/FinancesModule'
 import AgendaModule from './modules/agenda/AgendaModule'
 import TasksModule from './modules/tasks/TasksModule'
+import HabitsModule from './modules/habits/HabitsModule'
 
 const MODULES = [
   'Aujourd’hui',
@@ -63,6 +64,8 @@ function App() {
             <AgendaModule />
           ) : active === 'Tâches' ? (
             <TasksModule />
+          ) : active === 'Habitudes' ? (
+            <HabitsModule />
           ) : (
             <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
               Module « {active} » à venir.

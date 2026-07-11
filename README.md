@@ -47,8 +47,9 @@ Module Finances considéré complet pour l'usage courant. Restent en option (non
 
 - [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous)
 - [x] Module Tâches — todo-list avec catégories, priorités, échéances (avec détection de retard), section "Terminées" repliable
+- [x] Module Habitudes — suivi quotidien/hebdomadaire avec streaks et mini heatmap des 14 derniers jours
 - [ ] Service worker / mode hors-ligne
-- [ ] Modules suivants (Habitudes, Voiture, Documents, Objectifs, Voyages)
+- [ ] Modules suivants (Voiture, Documents, Objectifs, Voyages)
 
 ## Connecter Google Calendar (optionnel)
 
