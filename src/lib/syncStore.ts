@@ -37,6 +37,10 @@ export function hasPendingChanges(): boolean {
   return dirty.size > 0
 }
 
+export function isDirty(path: string): boolean {
+  return dirty.has(path)
+}
+
 export function onSyncStateChange(fn: () => void): () => void {
   listeners.push(fn)
   return () => {

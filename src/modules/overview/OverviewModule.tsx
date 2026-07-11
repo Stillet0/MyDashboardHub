@@ -9,6 +9,7 @@ import { fetchUpcomingGoogleEvents, isConnected as isGoogleConnected } from '../
 import { buildReminders, type Reminder, type Urgency } from '../../lib/reminders'
 import { getPermission, isNotificationSupported, notifyNewReminders, requestPermission } from '../../lib/notifications'
 import type { AgendaEvent } from '../../lib/agenda'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 const RECHECK_INTERVAL = 30 * 60 * 1000
 
@@ -74,9 +75,26 @@ export default function OverviewModule({ onNavigate }: Props) {
   const grouped: Record<Urgency, Reminder[]> = { overdue: [], today: [], soon: [] }
   reminders.forEach((r) => grouped[r.urgency].push(r))
 
+  const remindersContext =
+    reminders.length > 0
+      ? reminders
+          .map((r) => `- [${URGENCY_LABEL[r.urgency]}] ${r.title}${r.detail ? ` (${r.detail})` : ''} — ${r.module}`)
+          .join('\n')
+      : 'Aucune échéance urgente pour le moment.'
+
   return (
     <div>
-      <h2 className="font-display mb-4 text-xl font-normal">Aujourd'hui</h2>
+      <div className="mb-4">
+        <h2 className="font-display text-xl font-normal">Aujourd'hui</h2>
+        <div className="mt-2.5">
+          <AiSuggestPanel
+            label="Plan de la journée"
+            system="Tu es un assistant de productivité. Réponds en français en 5 phrases maximum ou une courte liste priorisée, de façon concrète et actionnable, sans salutation ni blabla."
+            prompt={`Voici mes échéances et tâches en cours :\n${remindersContext}\nPropose-moi ce qu'il faut prioriser aujourd'hui et dans quel ordre.`}
+            mode="text"
+          />
+        </div>
+      </div>
 
       {isNotificationSupported() && permission === 'default' && (
         <div className="mb-4 flex items-center justify-between rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-5 py-3">

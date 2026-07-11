@@ -10,6 +10,8 @@ import {
   type Priority,
   type Task,
 } from '../../lib/tasks'
+import { newChecklistItem } from '../../lib/checklist'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 type Draft = { title: string; category: string; priority: Priority; dueDate: string; notes: string }
 
@@ -115,6 +117,33 @@ export default function TasksModule() {
     await save({ ...data, tasks: data.tasks.filter((x) => x.id !== t.id) }, `Tâches: suppression de "${t.title}"`)
   }
 
+  async function handleAddSubtasks(t: Task, items: string[]) {
+    if (!data || items.length === 0) return
+    const newItems = items.map((text) => newChecklistItem(text))
+    const nextTasks = data.tasks.map((x) =>
+      x.id === t.id ? { ...x, subtasks: [...(x.subtasks ?? []), ...newItems] } : x,
+    )
+    await save({ ...data, tasks: nextTasks }, `Tâches: étapes IA ajoutées à "${t.title}"`)
+  }
+
+  async function toggleSubtask(t: Task, subId: string) {
+    if (!data) return
+    const nextTasks = data.tasks.map((x) =>
+      x.id === t.id
+        ? { ...x, subtasks: (x.subtasks ?? []).map((s) => (s.id === subId ? { ...s, done: !s.done } : s)) }
+        : x,
+    )
+    await save({ ...data, tasks: nextTasks }, `Tâches: étape mise à jour`)
+  }
+
+  async function removeSubtask(t: Task, subId: string) {
+    if (!data) return
+    const nextTasks = data.tasks.map((x) =>
+      x.id === t.id ? { ...x, subtasks: (x.subtasks ?? []).filter((s) => s.id !== subId) } : x,
+    )
+    await save({ ...data, tasks: nextTasks }, `Tâches: étape supprimée`)
+  }
+
   function renderEditForm(id: string) {
     return (
       <div className="py-3.5">
@@ -176,59 +205,105 @@ export default function TasksModule() {
     if (editingId === t.id) return <div key={t.id}>{renderEditForm(t.id)}</div>
     const overdue = isOverdue(t)
     return (
-      <div key={t.id} className="flex items-center justify-between gap-3 py-3.5">
-        <div className="flex min-w-0 items-center gap-3">
-          <button
-            onClick={() => toggleDone(t)}
-            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-              t.done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
-            }`}
-            title={t.done ? 'Rouvrir' : 'Marquer comme terminée'}
-          >
-            {t.done && <span className="text-xs text-[#08090b]">✓</span>}
-          </button>
-          <div className="min-w-0">
-            <div className={`text-sm font-medium ${t.done ? 'text-[var(--text-faint)] line-through' : ''}`}>
-              {t.title}
-            </div>
-            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-              {t.category && (
-                <span className="flex items-center gap-1.5">
-                  <span
-                    className="h-1.5 w-1.5 rounded-full"
-                    style={{ background: categoryColor(data!, t.category) }}
-                  />
-                  {t.category}
-                </span>
-              )}
-              {!t.done && (
-                <span style={{ color: PRIORITY_COLOR[t.priority] }}>{PRIORITY_LABEL[t.priority]}</span>
-              )}
-              {t.dueDate && (
-                <span className={overdue ? 'text-[var(--red)]' : undefined}>
-                  {overdue ? 'En retard · ' : ''}
-                  {fmtDueDate(t.dueDate)}
-                </span>
-              )}
+      <div key={t.id} className="py-3.5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              onClick={() => toggleDone(t)}
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                t.done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+              }`}
+              title={t.done ? 'Rouvrir' : 'Marquer comme terminée'}
+            >
+              {t.done && <span className="text-xs text-[#08090b]">✓</span>}
+            </button>
+            <div className="min-w-0">
+              <div className={`text-sm font-medium ${t.done ? 'text-[var(--text-faint)] line-through' : ''}`}>
+                {t.title}
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+                {t.category && (
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: categoryColor(data!, t.category) }}
+                    />
+                    {t.category}
+                  </span>
+                )}
+                {!t.done && (
+                  <span style={{ color: PRIORITY_COLOR[t.priority] }}>{PRIORITY_LABEL[t.priority]}</span>
+                )}
+                {t.dueDate && (
+                  <span className={overdue ? 'text-[var(--red)]' : undefined}>
+                    {overdue ? 'En retard · ' : ''}
+                    {fmtDueDate(t.dueDate)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              onClick={() => startEdit(t)}
+              title="Modifier"
+              className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--text)]"
+            >
+              ✎
+            </button>
+            <button
+              onClick={() => handleDelete(t)}
+              title="Supprimer"
+              className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--red)]"
+            >
+              ✕
+            </button>
+          </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            onClick={() => startEdit(t)}
-            title="Modifier"
-            className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--text)]"
-          >
-            ✎
-          </button>
-          <button
-            onClick={() => handleDelete(t)}
-            title="Supprimer"
-            className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--red)]"
-          >
-            ✕
-          </button>
-        </div>
+
+        {t.subtasks && t.subtasks.length > 0 && (
+          <div className="mt-2 ml-8 space-y-1">
+            {t.subtasks.map((s) => (
+              <div key={s.id} className="flex items-center gap-2 text-xs">
+                <button
+                  onClick={() => toggleSubtask(t, s.id)}
+                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${
+                    s.done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+                  }`}
+                >
+                  {s.done && <span className="text-[9px] text-[#08090b]">✓</span>}
+                </button>
+                <span className={`flex-1 ${s.done ? 'text-[var(--text-faint)] line-through' : 'text-[var(--text-muted)]'}`}>
+                  {s.text}
+                </span>
+                <button
+                  onClick={() => removeSubtask(t, s.id)}
+                  className="text-[var(--text-faint)] hover:text-[var(--red)]"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!t.done && (
+          <div className="mt-2.5 ml-8 flex flex-wrap gap-2">
+            <AiSuggestPanel
+              label="Décomposer en étapes"
+              system="Tu es un assistant de productivité concis. Réponds uniquement par une liste numérotée d'étapes concrètes et actionnables, en français, sans introduction ni conclusion. Maximum 6 étapes."
+              prompt={`Décompose cette tâche en étapes concrètes :\nTitre : ${t.title}${t.category ? `\nCatégorie : ${t.category}` : ''}${t.notes ? `\nNotes : ${t.notes}` : ''}${t.dueDate ? `\nÉchéance : ${fmtDueDate(t.dueDate)}` : ''}`}
+              applyLabel="Ajouter comme sous-étapes"
+              onApply={(items) => handleAddSubtasks(t, items)}
+            />
+            <AiSuggestPanel
+              label="Aide à démarrer"
+              system="Tu es un assistant de productivité bienveillant. Donne un conseil court (3 à 5 phrases), en français, en texte fluide sans liste, pour aider à démarrer ou débloquer cette tâche."
+              prompt={`Tâche : ${t.title}${t.notes ? `\nNotes : ${t.notes}` : ''}\nAide-moi à savoir comment m'y prendre.`}
+              mode="text"
+            />
+          </div>
+        )}
       </div>
     )
   }

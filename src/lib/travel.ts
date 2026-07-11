@@ -1,3 +1,5 @@
+import type { ChecklistItem } from './checklist'
+
 export type Trip = {
   id: string
   name: string
@@ -5,6 +7,7 @@ export type Trip = {
   startDate?: string // 'YYYY-MM-DD'
   endDate?: string // 'YYYY-MM-DD'
   budget?: number
+  checklist?: ChecklistItem[]
 }
 
 export type Expense = {

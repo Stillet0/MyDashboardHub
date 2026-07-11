@@ -10,6 +10,7 @@ import DocumentsModule from './modules/documents/DocumentsModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
 import OverviewModule from './modules/overview/OverviewModule'
+import AiSettings from './components/AiSettings'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
@@ -51,6 +52,7 @@ function App() {
             ) : (
               <span className="text-xs text-[var(--text-faint)]">✓ Synchronisé</span>
             )}
+            <AiSettings />
             <button
               onClick={() => {
                 clearToken()
