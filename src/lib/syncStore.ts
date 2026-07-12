@@ -2,13 +2,28 @@ import { getFile, putFile } from './githubStore'
 
 type DirtyEntry = { data: unknown; sha: string | undefined; message: string }
 
-const dirty = new Map<string, DirtyEntry>()
+const DIRTY_REGISTRY_KEY = 'monhub_dirty_registry'
+
+const dirty = new Map<string, DirtyEntry>(loadDirtyRegistry())
 const shaByPath = new Map<string, string | undefined>()
 let flushing = false
 let listeners: Array<() => void> = []
 
 function cacheKey(path: string) {
   return 'monhub_cache_' + path
+}
+
+function loadDirtyRegistry(): Array<[string, DirtyEntry]> {
+  try {
+    const raw = localStorage.getItem(DIRTY_REGISTRY_KEY)
+    return raw ? Object.entries(JSON.parse(raw)) : []
+  } catch {
+    return []
+  }
+}
+
+function saveDirtyRegistry() {
+  localStorage.setItem(DIRTY_REGISTRY_KEY, JSON.stringify(Object.fromEntries(dirty)))
 }
 
 export function cacheRead<T>(path: string): { data: T; sha?: string } | null {
@@ -26,10 +41,16 @@ export function cacheWrite<T>(path: string, data: T, sha: string | undefined) {
   shaByPath.set(path, sha)
 }
 
-/** Records a local edit to be synced on the next flush (periodic, or on close). Does not touch the network. */
+/**
+ * Records a local edit to be synced on the next flush (periodic, or on close). Does not touch the
+ * network, but writes through to the local cache and to a persisted dirty registry immediately, so
+ * the edit survives a crash/hard-reload even if the flush never gets a chance to run.
+ */
 export function markDirty(path: string, data: unknown, message: string) {
   const sha = shaByPath.get(path)
   dirty.set(path, { data, sha, message })
+  cacheWrite(path, data, sha)
+  saveDirtyRegistry()
   notify()
 }
 
@@ -79,8 +100,9 @@ export async function flushDirty(keepalive = false): Promise<void> {
       const res = await putFile(path, data, sha, message, keepalive)
       cacheWrite(path, data, res.sha)
       dirty.delete(path)
+      saveDirtyRegistry()
     } catch {
-      // Left in the dirty map; retried on the next periodic flush or close.
+      // Left in the dirty map (and the persisted registry); retried on the next periodic flush or close.
     }
   }
   flushing = false
