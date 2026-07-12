@@ -16,6 +16,7 @@ export type MaintenanceEntry = {
   mileage?: number
   cost?: number
   notes?: string
+  done?: boolean // absent = done (entretien historique enregistré avant l'ajout de ce champ)
 }
 
 export type CarData = {
@@ -66,4 +67,8 @@ export function logForVehicle(data: CarData, vehicleId: string): MaintenanceEntr
   return [...data.maintenanceLog.filter((e) => e.vehicleId === vehicleId)].sort((a, b) =>
     b.date.localeCompare(a.date),
   )
+}
+
+export function isMaintenanceDone(e: MaintenanceEntry): boolean {
+  return e.done !== false
 }

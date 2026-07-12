@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import type { CarData, Vehicle } from './car'
+import { isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
@@ -77,6 +77,19 @@ export function buildReminders(input: {
         title: d.label,
         detail: vehicleName(d.vehicleId),
         dueDate: d.dueDate,
+        urgency,
+      })
+    })
+    input.car.maintenanceLog.forEach((e) => {
+      if (isMaintenanceDone(e)) return
+      const urgency = urgencyForDate(e.date)
+      if (!urgency) return
+      out.push({
+        id: 'car_log_' + e.id,
+        module: 'Voiture',
+        title: e.label,
+        detail: vehicleName(e.vehicleId),
+        dueDate: e.date,
         urgency,
       })
     })
