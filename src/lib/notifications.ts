@@ -41,10 +41,17 @@ export function notifyNewReminders(
 
   for (const r of reminders) {
     if (notified[r.id] === todayKey) continue
-    new Notification(`MonHub · ${r.module}`, {
-      body: r.detail ? `${r.title} — ${r.detail}` : r.title,
-      tag: r.id,
-    })
+    try {
+      // Sur une PWA installée sur iOS (ajoutée à l'écran d'accueil), Safari n'autorise
+      // `new Notification()` que depuis un Service Worker (`showNotification()`) et lève une
+      // exception ici — sans try/catch, ça faisait planter tout l'onglet Aperçu.
+      new Notification(`MonHub · ${r.module}`, {
+        body: r.detail ? `${r.title} — ${r.detail}` : r.title,
+        tag: r.id,
+      })
+    } catch (e) {
+      console.error('Notification impossible sur cet appareil :', e)
+    }
     notified[r.id] = todayKey
     changed = true
   }
