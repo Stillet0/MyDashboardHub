@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { flushDirty, hasPendingChanges, isFlushing, onSyncStateChange } from './syncStore'
+import { flushDirty, getLastSyncError, hasPendingChanges, isFlushing, onSyncStateChange } from './syncStore'
 
 const FIVE_MINUTES = 5 * 60 * 1000
 
@@ -12,11 +12,13 @@ const FIVE_MINUTES = 5 * 60 * 1000
 export function useSyncManager() {
   const [pending, setPending] = useState(hasPendingChanges())
   const [syncing, setSyncing] = useState(isFlushing())
+  const [error, setError] = useState(getLastSyncError())
 
   useEffect(() => {
     const unsubscribe = onSyncStateChange(() => {
       setPending(hasPendingChanges())
       setSyncing(isFlushing())
+      setError(getLastSyncError())
     })
 
     // Des modifications non synchronisées peuvent avoir survécu à une fermeture brutale
@@ -46,5 +48,5 @@ export function useSyncManager() {
     }
   }, [])
 
-  return { pending, syncing, syncNow: () => flushDirty() }
+  return { pending, syncing, error, syncNow: () => flushDirty() }
 }

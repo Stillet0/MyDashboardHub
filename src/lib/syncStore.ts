@@ -7,6 +7,7 @@ const DIRTY_REGISTRY_KEY = 'monhub_dirty_registry'
 const dirty = new Map<string, DirtyEntry>(loadDirtyRegistry())
 const shaByPath = new Map<string, string | undefined>()
 let flushing = false
+let lastError: string | null = null
 let listeners: Array<() => void> = []
 
 function cacheKey(path: string) {
@@ -77,6 +78,11 @@ export function isFlushing(): boolean {
   return flushing
 }
 
+/** Message de la dernière tentative de synchronisation ratée, ou `null` si tout est à jour. */
+export function getLastSyncError(): string | null {
+  return lastError
+}
+
 /** Fetches the remote copy for a path, seeding the local cache and known SHA (used on first load). */
 export async function fetchAndCache<T>(path: string, defaultValue: T): Promise<T> {
   const res = await getFile<T>(path)
@@ -93,6 +99,7 @@ export async function fetchAndCache<T>(path: string, defaultValue: T): Promise<T
 export async function flushDirty(keepalive = false): Promise<void> {
   if (flushing || dirty.size === 0) return
   flushing = true
+  lastError = null
   notify()
   const entries = [...dirty.entries()]
   for (const [path, { data, sha, message }] of entries) {
@@ -101,8 +108,9 @@ export async function flushDirty(keepalive = false): Promise<void> {
       cacheWrite(path, data, res.sha)
       dirty.delete(path)
       saveDirtyRegistry()
-    } catch {
+    } catch (e) {
       // Left in the dirty map (and the persisted registry); retried on the next periodic flush or close.
+      lastError = e instanceof Error ? e.message : `Échec de synchronisation de ${path}`
     }
   }
   flushing = false

@@ -17,6 +17,7 @@ import { sortedGoals } from '../../lib/goals'
 import { isDoneThisPeriod } from '../../lib/habits'
 import { sortedTrips, isPast as isTripPast, fmtDateRange } from '../../lib/travel'
 import { sortedSnapshots, snapshotNetWorth, computeDelta, fmtMoney } from '../../lib/finances'
+import { useSyncManager } from '../../lib/useSyncManager'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
 import QuickAdd from '../../components/QuickAdd'
 
@@ -68,6 +69,7 @@ export default function OverviewModule({ onNavigate }: Props) {
   const { data: finances } = useFinancesData()
   const { data: travel } = useTravelData()
   const { data: health, save: saveHealth } = useHealthData()
+  const { error: syncError, syncNow } = useSyncManager()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
   const [permission, setPermission] = useState(getPermission())
 
@@ -153,6 +155,18 @@ export default function OverviewModule({ onNavigate }: Props) {
 
   return (
     <div>
+      {syncError && (
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-[20px] border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-5 py-3">
+          <span className="text-sm text-[var(--red)]">⚠ Échec de synchronisation : {syncError}</span>
+          <button
+            onClick={syncNow}
+            className="font-display shrink-0 rounded-full border border-[var(--red)]/50 px-3 py-1.5 text-xs font-semibold text-[var(--red)]"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+
       <div className="mb-4">
         <h2 className="font-display text-xl font-normal">Aperçu</h2>
         <div className="mt-2.5">

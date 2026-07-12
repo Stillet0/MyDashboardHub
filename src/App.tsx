@@ -33,7 +33,7 @@ type ModuleName = (typeof MODULES)[number]
 
 function App() {
   const [active, setActive] = useState<ModuleName>('Aperçu')
-  const { pending, syncing, syncNow } = useSyncManager()
+  const { pending, syncing, error: syncError, syncNow } = useSyncManager()
 
   return (
     <TokenGate>
@@ -47,6 +47,14 @@ function App() {
             <GlobalSearch onNavigate={(m) => setActive(m)} />
             {syncing ? (
               <span className="text-xs text-[var(--text-faint)]">Synchronisation…</span>
+            ) : pending && syncError ? (
+              <button
+                onClick={syncNow}
+                className="text-xs text-[var(--red)] hover:underline"
+                title={syncError}
+              >
+                ⚠ Échec de synchro — réessayer
+              </button>
             ) : pending ? (
               <button
                 onClick={syncNow}
