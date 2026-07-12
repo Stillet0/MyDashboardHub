@@ -102,6 +102,8 @@ Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vr
 
 Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Synchronisation…`) est visible en permanence dans l'en-tête. Comme avant, chaque écriture est protégée par le SHA du fichier : si un autre appareil a modifié la donnée entre-temps, l'écriture est refusée plutôt que d'écraser silencieusement.
 
+**Aucune modification n'est jamais seulement "en mémoire"** : chaque édition est écrite immédiatement dans `localStorage` (donnée + liste de ce qui reste à synchroniser), donc même une fermeture brutale (crash, coupure réseau, batterie) avant la prochaine synchronisation ne perd rien. À la réouverture de l'app, toute modification non encore synchronisée est visible normalement et une tentative de synchronisation est relancée automatiquement.
+
 ## Connecter Google Calendar (optionnel)
 
 Le module Agenda peut afficher tes événements Google Calendar à venir, en lecture seule, en plus des événements créés dans MonHub. Configuration à faire une seule fois :

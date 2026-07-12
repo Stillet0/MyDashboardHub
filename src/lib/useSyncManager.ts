@@ -19,6 +19,11 @@ export function useSyncManager() {
       setSyncing(isFlushing())
     })
 
+    // Des modifications non synchronisées peuvent avoir survécu à une fermeture brutale
+    // (crash, coupure réseau) de la session précédente : on tente de les pousser tout de
+    // suite plutôt que d'attendre jusqu'à 5 minutes.
+    if (hasPendingChanges()) flushDirty()
+
     const interval = setInterval(() => {
       flushDirty()
     }, FIVE_MINUTES)
