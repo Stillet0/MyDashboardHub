@@ -6,6 +6,7 @@ export type Deadline = {
   label: string
   dueDate: string // 'YYYY-MM-DD'
   notes?: string
+  done?: boolean // absent = pas fait (comportement historique, avant l'ajout de ce champ)
 }
 
 export type MaintenanceEntry = {
@@ -71,4 +72,8 @@ export function logForVehicle(data: CarData, vehicleId: string): MaintenanceEntr
 
 export function isMaintenanceDone(e: MaintenanceEntry): boolean {
   return e.done !== false
+}
+
+export function isDeadlineDone(d: Deadline): boolean {
+  return d.done === true
 }

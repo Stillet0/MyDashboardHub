@@ -6,6 +6,7 @@ import {
   fmtDate,
   fmtEuro,
   fmtKm,
+  isDeadlineDone,
   isMaintenanceDone,
   isOverdue,
   logForVehicle,
@@ -169,6 +170,16 @@ export default function CarModule() {
     await save(
       { ...data, deadlines: data.deadlines.filter((x) => x.id !== d.id) },
       `Voiture: échéance "${d.label}" supprimée`,
+    )
+  }
+
+  async function toggleDeadlineDone(d: Deadline) {
+    if (!data) return
+    const nowDone = !isDeadlineDone(d)
+    const nextDeadlines = data.deadlines.map((x) => (x.id === d.id ? { ...x, done: nowDone } : x))
+    await save(
+      { ...data, deadlines: nextDeadlines },
+      `Voiture: échéance "${d.label}" ${nowDone ? 'marquée faite' : 'marquée à faire'}`,
     )
   }
 
@@ -451,14 +462,34 @@ export default function CarModule() {
                         </div>
                       ) : (
                         <div key={d.id} className="flex items-center justify-between gap-3 py-3">
-                          <div>
-                            <div className="text-sm font-medium">{d.label}</div>
-                            <div
-                              className={`text-xs ${isOverdue(d.dueDate) ? 'text-[var(--red)]' : 'text-[var(--text-muted)]'}`}
+                          <div className="flex min-w-0 items-center gap-3">
+                            <button
+                              onClick={() => toggleDeadlineDone(d)}
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                                isDeadlineDone(d) ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+                              }`}
+                              title={isDeadlineDone(d) ? 'Marquer à faire' : 'Marquer fait'}
                             >
-                              {isOverdue(d.dueDate)
-                                ? `En retard depuis le ${fmtDate(d.dueDate)}`
-                                : `${fmtDate(d.dueDate)} · dans ${daysUntil(d.dueDate)} j`}
+                              {isDeadlineDone(d) && <span className="text-xs text-[#08090b]">✓</span>}
+                            </button>
+                            <div className="min-w-0">
+                              <div
+                                className={`text-sm font-medium ${isDeadlineDone(d) ? 'text-[var(--text-faint)] line-through' : ''}`}
+                              >
+                                {d.label}
+                              </div>
+                              {!isDeadlineDone(d) && (
+                                <div
+                                  className={`text-xs ${isOverdue(d.dueDate) ? 'text-[var(--red)]' : 'text-[var(--text-muted)]'}`}
+                                >
+                                  {isOverdue(d.dueDate)
+                                    ? `En retard depuis le ${fmtDate(d.dueDate)}`
+                                    : `${fmtDate(d.dueDate)} · dans ${daysUntil(d.dueDate)} j`}
+                                </div>
+                              )}
+                              {isDeadlineDone(d) && (
+                                <div className="text-xs text-[var(--text-faint)]">{fmtDate(d.dueDate)}</div>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">

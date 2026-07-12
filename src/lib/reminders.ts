@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import { isMaintenanceDone, type CarData, type Vehicle } from './car'
+import { isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
@@ -69,6 +69,7 @@ export function buildReminders(input: {
     const vehicleName = (id: string): string | undefined =>
       input.car!.vehicles.find((v: Vehicle) => v.id === id)?.name
     input.car.deadlines.forEach((d) => {
+      if (isDeadlineDone(d)) return
       const urgency = urgencyForDate(d.dueDate)
       if (!urgency) return
       out.push({
@@ -96,7 +97,7 @@ export function buildReminders(input: {
   }
 
   input.documents?.documents.forEach((doc) => {
-    if (!doc.expirationDate) return
+    if (!doc.expirationDate || doc.done) return
     const urgency = urgencyForDate(doc.expirationDate)
     if (!urgency) return
     out.push({

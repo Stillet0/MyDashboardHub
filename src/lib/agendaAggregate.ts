@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import { isMaintenanceDone, type CarData, type Vehicle } from './car'
+import { isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { HealthData } from './health'
@@ -40,7 +40,7 @@ export function buildExternalAgendaItems(input: {
     const vehicleName = (id: string): string | undefined =>
       input.car!.vehicles.find((v: Vehicle) => v.id === id)?.name
     input.car.deadlines.forEach((d) => {
-      if (d.dueDate < todayKey) return
+      if (isDeadlineDone(d) || d.dueDate < todayKey) return
       out.push({ id: 'car_' + d.id, title: d.label, date: d.dueDate, detail: vehicleName(d.vehicleId), module: 'Voiture' })
     })
     input.car.maintenanceLog.forEach((e) => {
@@ -50,7 +50,7 @@ export function buildExternalAgendaItems(input: {
   }
 
   input.documents?.documents.forEach((doc) => {
-    if (!doc.expirationDate || doc.expirationDate < todayKey) return
+    if (!doc.expirationDate || doc.done || doc.expirationDate < todayKey) return
     out.push({ id: 'doc_' + doc.id, title: doc.name, date: doc.expirationDate, detail: doc.category, module: 'Documents' })
   })
 

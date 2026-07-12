@@ -4,6 +4,7 @@ import {
   categoryColor,
   daysUntil,
   fmtDate,
+  isDocumentDone,
   isExpired,
   isExpiringSoon,
   sortedDocuments,
@@ -103,6 +104,16 @@ export default function DocumentsModule() {
     )
   }
 
+  async function toggleDocDone(d: DocumentRef) {
+    if (!data) return
+    const nowDone = !isDocumentDone(d)
+    const nextDocs = data.documents.map((x) => (x.id === d.id ? { ...x, done: nowDone } : x))
+    await save(
+      { ...data, documents: nextDocs },
+      `Documents: "${d.name}" ${nowDone ? 'marqué renouvelé' : 'marqué à renouveler'}`,
+    )
+  }
+
   function renderEditForm(id: string) {
     return (
       <div className="py-3.5">
@@ -161,32 +172,51 @@ export default function DocumentsModule() {
     if (editingId === d.id) return <div key={d.id}>{renderEditForm(d.id)}</div>
     const expired = isExpired(d)
     const soon = isExpiringSoon(d)
+    const done = isDocumentDone(d)
     return (
       <div key={d.id} className="flex items-center justify-between gap-3 py-3.5">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            {d.category && (
-              <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ background: categoryColor(data!, d.category) }}
-              />
-            )}
-            {d.name}
-          </div>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
-            {d.category && <span>{d.category}</span>}
-            {d.expirationDate && (
-              <span
-                className={expired ? 'text-[var(--red)]' : soon ? 'text-[var(--gold)]' : undefined}
-              >
-                {expired
-                  ? `Expiré depuis le ${fmtDate(d.expirationDate)}`
-                  : soon
-                    ? `Expire dans ${daysUntil(d.expirationDate)} j · ${fmtDate(d.expirationDate)}`
-                    : `Expire le ${fmtDate(d.expirationDate)}`}
-              </span>
-            )}
-            {d.notes && <span className="text-[var(--text-faint)]">{d.notes}</span>}
+        <div className="flex min-w-0 items-center gap-3">
+          {d.expirationDate && (
+            <button
+              onClick={() => toggleDocDone(d)}
+              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+              }`}
+              title={done ? 'Marquer à renouveler' : 'Marquer renouvelé'}
+            >
+              {done && <span className="text-xs text-[#08090b]">✓</span>}
+            </button>
+          )}
+          <div className="min-w-0">
+            <div className={`flex items-center gap-2 text-sm font-medium ${done ? 'text-[var(--text-faint)] line-through' : ''}`}>
+              {d.category && (
+                <span
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: categoryColor(data!, d.category) }}
+                />
+              )}
+              {d.name}
+              {done && (
+                <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] text-[var(--emerald)]">
+                  Renouvelé
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+              {d.category && <span>{d.category}</span>}
+              {d.expirationDate && (
+                <span
+                  className={expired ? 'text-[var(--red)]' : soon ? 'text-[var(--gold)]' : undefined}
+                >
+                  {expired
+                    ? `Expiré depuis le ${fmtDate(d.expirationDate)}`
+                    : soon
+                      ? `Expire dans ${daysUntil(d.expirationDate)} j · ${fmtDate(d.expirationDate)}`
+                      : `Expire le ${fmtDate(d.expirationDate)}`}
+                </span>
+              )}
+              {d.notes && <span className="text-[var(--text-faint)]">{d.notes}</span>}
+            </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">

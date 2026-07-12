@@ -6,6 +6,11 @@ export type DocumentRef = {
   category?: string
   expirationDate?: string // 'YYYY-MM-DD'
   notes?: string
+  done?: boolean // renouvelé/pris en charge — n'a de sens que si expirationDate est défini
+}
+
+export function isDocumentDone(doc: DocumentRef): boolean {
+  return doc.done === true
 }
 
 export type DocumentsData = {
@@ -18,12 +23,12 @@ export function toDateKey(d: Date): string {
 }
 
 export function isExpired(doc: DocumentRef): boolean {
-  if (!doc.expirationDate) return false
+  if (!doc.expirationDate || doc.done) return false
   return doc.expirationDate < toDateKey(new Date())
 }
 
 export function isExpiringSoon(doc: DocumentRef, withinDays = 30): boolean {
-  if (!doc.expirationDate || isExpired(doc)) return false
+  if (!doc.expirationDate || doc.done || isExpired(doc)) return false
   const [y, m, d] = doc.expirationDate.split('-').map(Number)
   const exp = new Date(y, m - 1, d)
   const today = new Date()
