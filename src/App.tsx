@@ -13,6 +13,7 @@ import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
 import OverviewModule from './modules/overview/OverviewModule'
 import AiSettings from './components/AiSettings'
+import GlobalSearch from './components/GlobalSearch'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
@@ -43,6 +44,7 @@ function App() {
             Mon<span className="text-[var(--gold)]">Hub</span>
           </h1>
           <div className="flex items-center gap-3">
+            <GlobalSearch onNavigate={(m) => setActive(m)} />
             {syncing ? (
               <span className="text-xs text-[var(--text-faint)]">Synchronisation…</span>
             ) : pending ? (

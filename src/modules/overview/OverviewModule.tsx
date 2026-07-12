@@ -18,6 +18,7 @@ import { isDoneThisPeriod } from '../../lib/habits'
 import { sortedTrips, isPast as isTripPast, fmtDateRange } from '../../lib/travel'
 import { sortedSnapshots, snapshotNetWorth, computeDelta, fmtMoney } from '../../lib/finances'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
+import QuickAdd from '../../components/QuickAdd'
 
 const RECHECK_INTERVAL = 30 * 60 * 1000
 
@@ -58,15 +59,15 @@ function Tile({ label, onClick, children }: { label: string; onClick: () => void
 }
 
 export default function OverviewModule({ onNavigate }: Props) {
-  const { data: tasks } = useTasksData()
+  const { data: tasks, save: saveTasks } = useTasksData()
   const { data: car } = useCarData()
-  const { data: documents } = useDocumentsData()
-  const { data: goals } = useGoalsData()
-  const { data: agenda } = useAgendaData()
+  const { data: documents, save: saveDocuments } = useDocumentsData()
+  const { data: goals, save: saveGoals } = useGoalsData()
+  const { data: agenda, save: saveAgenda } = useAgendaData()
   const { data: habits } = useHabitsData()
   const { data: finances } = useFinancesData()
   const { data: travel } = useTravelData()
-  const { data: health } = useHealthData()
+  const { data: health, save: saveHealth } = useHealthData()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
   const [permission, setPermission] = useState(getPermission())
 
@@ -162,6 +163,21 @@ export default function OverviewModule({ onNavigate }: Props) {
             mode="text"
           />
         </div>
+      </div>
+
+      <div className="mb-4">
+        <QuickAdd
+          tasksData={tasks}
+          saveTasks={saveTasks}
+          agendaData={agenda}
+          saveAgenda={saveAgenda}
+          healthData={health}
+          saveHealth={saveHealth}
+          goalsData={goals}
+          saveGoals={saveGoals}
+          documentsData={documents}
+          saveDocuments={saveDocuments}
+        />
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">

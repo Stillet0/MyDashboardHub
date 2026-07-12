@@ -59,7 +59,8 @@ Tous les modules de la feuille de route initiale sont en place.
 
 - [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
 - [x] Onglet "Aperçu" — tableau de bord résumant chaque module en un coup d'œil (patrimoine net, prochain événement, tâches critiques, objectifs en cours, habitudes du jour, prochaine échéance voiture/document, prochain voyage), + rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) et notifications navigateur/OS quand l'app est ouverte
-- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, suggestions de sites/outils utiles (tâches, objectifs, voyages), génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, conseils pour tenir ses habitudes, analyse mensuelle des finances, plan de la journée priorisé sur l'onglet Aperçu
+- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, suggestions de sites/outils utiles (tâches, objectifs, voyages), génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, conseils pour tenir ses habitudes, analyse mensuelle des finances, plan de la journée priorisé et ajout rapide en langage naturel sur l'onglet Aperçu
+- [x] Recherche globale — barre de recherche dans l'en-tête qui retrouve instantanément une tâche, un événement, une habitude, un véhicule/échéance/entretien, un document, un rendez-vous/traitement santé, un objectif ou un voyage, et navigue directement vers le bon module
 
 ## Fonctionnalités intelligentes (IA)
 
@@ -70,7 +71,7 @@ MonHub peut utiliser l'API gratuite **Google Gemini** pour des fonctionnalités 
 - **Voyages** : « ✨ Suggestions de visites » propose des lieux et activités incontournables pour la destination du voyage, ajoutables à une checklist du voyage, « ✨ Sites utiles » suggère des sites de réservation/transport/guides pour préparer le séjour.
 - **Habitudes** : « ✨ Conseil » donne un conseil court adapté à la série en cours (ou à la difficulté de s'y tenir).
 - **Finances** : « ✨ Analyse du mois » donne une analyse rapide de la situation financière du mois (patrimoine, répartition, cashflow).
-- **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours.
+- **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours, et « ✨ Ajout rapide » permet de créer un élément en tapant une simple phrase (ex : *"Dentiste vendredi 15h"*, *"Renouveler le passeport avant mars"*) — l'IA identifie automatiquement le bon module (Tâches, Agenda, Santé, Objectifs ou Documents), en extrait les champs (titre, date, catégorie…), puis affiche un aperçu à confirmer avant tout ajout.
 
 Les suggestions de sites/outils restent des recommandations en texte simple (jamais de lien cliquable auto-généré) : l'IA est incitée à ne citer que des ressources réputées et à s'abstenir si elle n'est pas sûre qu'elles existent, mais comme toute IA générative elle peut se tromper — vérifie toujours par toi-même avant de t'y fier.
 
