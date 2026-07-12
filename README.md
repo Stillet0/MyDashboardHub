@@ -109,7 +109,7 @@ Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Syn
 
 **Aucune modification n'est jamais seulement "en mémoire"** : chaque édition est écrite immédiatement dans `localStorage` (donnée + liste de ce qui reste à synchroniser), donc même une fermeture brutale (crash, coupure réseau, batterie) avant la prochaine synchronisation ne perd rien. À la réouverture de l'app, toute modification non encore synchronisée est visible normalement et une tentative de synchronisation est relancée automatiquement.
 
-**Robustesse** : chaque onglet est isolé par un error boundary — si une donnée corrompue ou inattendue fait planter l'affichage d'un module, seul cet onglet affiche un message d'erreur récupérable (le reste de l'app, y compris la navigation, continue de fonctionner) plutôt que de laisser tout l'écran devenir noir. Les dates au format inattendu (`YYYY-MM-DD` attendu) sont aussi tolérées partout où elles sont affichées, sans jamais faire planter le rendu.
+**Robustesse** : chaque onglet est isolé par un error boundary — si une donnée corrompue ou inattendue fait planter l'affichage d'un module, seul cet onglet affiche un message d'erreur récupérable (le reste de l'app, y compris la navigation, continue de fonctionner) plutôt que de laisser tout l'écran devenir noir. Les dates au format inattendu (`YYYY-MM-DD` attendu) sont aussi tolérées partout où elles sont affichées, sans jamais faire planter le rendu. Les notifications natives sont également protégées : sur une PWA installée sur iOS, Safari refuse `new Notification()` en dehors d'un Service Worker et lève une exception — celle-ci est maintenant rattrapée pour ne jamais faire planter l'onglet Aperçu.
 
 ## Connecter Google Calendar (optionnel)
 
