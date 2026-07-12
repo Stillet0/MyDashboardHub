@@ -22,6 +22,7 @@ import {
   type FinancesData,
 } from '../../lib/finances'
 import EvolutionChart from './EvolutionChart'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 function DeltaBadge({ label, diff, pct }: { label: string; diff: number | null; pct: number | null }) {
   if (diff === null) {
@@ -292,6 +293,16 @@ export default function FinancesOverview({ data }: { data: FinancesData }) {
           </div>
         </div>
       )}
+
+      <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="mb-3 text-sm font-medium text-[var(--text-muted)]">Analyse IA</div>
+        <AiSuggestPanel
+          label="Analyse du mois"
+          system="Tu es un conseiller financier personnel bienveillant. Réponds en français en 4 à 6 phrases maximum, en texte fluide sans liste, avec une analyse concrète du mois (points positifs, points de vigilance, une suggestion pratique). Base-toi uniquement sur les chiffres donnés, pas de conseil générique."
+          prompt={`Voici ma situation financière du mois :\nPatrimoine net : ${fmtMoney(total)}${momDelta.diff !== null ? ` (variation du mois : ${momDelta.diff >= 0 ? '+' : ''}${fmtMoney(momDelta.diff)}${momDelta.pct !== null ? `, ${momDelta.pct >= 0 ? '+' : ''}${momDelta.pct.toFixed(1)}%` : ''})` : ''}\nRépartition : ${catRows.map(([cat, val]) => `${cat} ${fmtMoney(val)}`).join(', ')}${totalDebt > 0 ? `\nDettes : ${fmtMoney(totalDebt)}` : ''}${ef && ef.avgExpense > 0 && ef.months !== null ? `\nFonds d'urgence : ${ef.months.toFixed(1)} mois de dépenses` : ''}${cf ? `\nCashflow du mois : revenus ${fmtMoney(cfTotals.income)}, dépenses ${fmtMoney(cfTotals.expenses)}, épargne ${cfTotals.net >= 0 ? '+' : ''}${fmtMoney(cfTotals.net)}` : ''}\nDonne-moi une analyse rapide et un conseil concret.`}
+          mode="text"
+        />
+      </div>
     </div>
   )
 }

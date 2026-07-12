@@ -302,6 +302,12 @@ export default function TasksModule() {
               prompt={`Tâche : ${t.title}${t.notes ? `\nNotes : ${t.notes}` : ''}\nAide-moi à savoir comment m'y prendre.`}
               mode="text"
             />
+            <AiSuggestPanel
+              label="Sites utiles"
+              system="Tu es un assistant qui recommande des ressources en ligne fiables et bien connues (sites, outils, applications) pour aider à accomplir une tâche. Réponds en français par une liste numérotée de 3 à 5 ressources réelles et réputées, au format 'Nom — à quoi ça sert' (pas d'URL brute, pas de lien, juste le nom du site/outil et son utilité). Sans introduction ni conclusion. Si tu n'es pas certain qu'une ressource existe vraiment, ne la propose pas."
+              prompt={`Tâche : ${t.title}${t.category ? `\nCatégorie : ${t.category}` : ''}${t.notes ? `\nNotes : ${t.notes}` : ''}\nQuels sites ou outils en ligne pourraient m'aider pour cette tâche ?`}
+              mode="text"
+            />
           </div>
         )}
       </div>

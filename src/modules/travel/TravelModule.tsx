@@ -311,13 +311,19 @@ export default function TravelModule() {
         )}
 
         {!past && t.destination && (
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             <AiSuggestPanel
               label="Suggestions de visites"
               system="Tu es un guide de voyage. Réponds uniquement par une liste numérotée de 6 à 10 lieux, activités ou visites incontournables pour cette destination, en français, sans introduction ni conclusion."
               prompt={`Destination : ${t.destination}${t.startDate || t.endDate ? `\nDates : ${fmtDateRange(t.startDate, t.endDate)}` : ''}\nPropose des lieux et activités à visiter sur place.`}
               applyLabel="Ajouter à ma liste"
               onApply={(items) => handleAddChecklistItems(t, items)}
+            />
+            <AiSuggestPanel
+              label="Sites utiles"
+              system="Tu es un assistant qui recommande des ressources en ligne fiables et bien connues (sites de réservation, guides, transport, visas) pour préparer un voyage. Réponds en français par une liste numérotée de 3 à 5 ressources réelles et réputées, au format 'Nom — à quoi ça sert' (pas d'URL brute, pas de lien, juste le nom du site/outil et son utilité). Sans introduction ni conclusion. Si tu n'es pas certain qu'une ressource existe vraiment, ne la propose pas."
+              prompt={`Destination : ${t.destination}${t.startDate || t.endDate ? `\nDates : ${fmtDateRange(t.startDate, t.endDate)}` : ''}\nQuels sites ou outils en ligne pourraient m'aider à préparer ce voyage (réservation, transport, guides) ?`}
+              mode="text"
             />
           </div>
         )}
