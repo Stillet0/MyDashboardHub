@@ -2,12 +2,27 @@ import { getFile, putFile } from './githubStore'
 
 type DirtyEntry = { data: unknown; sha: string | undefined; message: string }
 
+export type ConflictInfo = { path: string; label: string }
+
 const DIRTY_REGISTRY_KEY = 'monhub_dirty_registry'
+
+const PATH_LABELS: Record<string, string> = {
+  'data/finances.json': 'Finances',
+  'data/agenda.json': 'Agenda',
+  'data/taches.json': 'Tâches',
+  'data/habitudes.json': 'Habitudes',
+  'data/voiture.json': 'Voiture',
+  'data/documents.json': 'Documents',
+  'data/sante.json': 'Santé',
+  'data/objectifs.json': 'Objectifs',
+  'data/voyages.json': 'Voyages',
+}
 
 const dirty = new Map<string, DirtyEntry>(loadDirtyRegistry())
 const shaByPath = new Map<string, string | undefined>()
 let flushing = false
 let lastError: string | null = null
+let lastConflict: ConflictInfo | null = null
 let listeners: Array<() => void> = []
 
 function cacheKey(path: string) {
@@ -83,6 +98,41 @@ export function getLastSyncError(): string | null {
   return lastError
 }
 
+/**
+ * Si le dernier échec est un vrai conflit de SHA (un autre appareil a écrit entre-temps),
+ * renvoie le fichier concerné : il faut alors un choix explicite (garder sa version ou
+ * reprendre celle à jour), pas juste un "réessayer" qui échouerait indéfiniment avec le
+ * même SHA périmé.
+ */
+export function getLastConflict(): ConflictInfo | null {
+  return lastConflict
+}
+
+/** Écrase la version distante avec la modification locale en attente, en reprenant le SHA à jour. */
+export async function resolveConflictKeepLocal(path: string): Promise<void> {
+  const entry = dirty.get(path)
+  if (!entry) return
+  const fresh = await getFile(path)
+  const res = await putFile(path, entry.data, fresh?.sha, entry.message, false)
+  cacheWrite(path, entry.data, res.sha)
+  dirty.delete(path)
+  saveDirtyRegistry()
+  if (lastConflict?.path === path) lastConflict = null
+  lastError = null
+  notify()
+}
+
+/** Abandonne la modification locale en attente et reprend la version distante à jour. */
+export async function resolveConflictDiscardLocal(path: string): Promise<void> {
+  dirty.delete(path)
+  saveDirtyRegistry()
+  const fresh = await getFile(path)
+  if (fresh) cacheWrite(path, fresh.data, fresh.sha)
+  if (lastConflict?.path === path) lastConflict = null
+  lastError = null
+  notify()
+}
+
 /** Fetches the remote copy for a path, seeding the local cache and known SHA (used on first load). */
 export async function fetchAndCache<T>(path: string, defaultValue: T): Promise<T> {
   const res = await getFile<T>(path)
@@ -108,9 +158,15 @@ export async function flushDirty(keepalive = false): Promise<void> {
       cacheWrite(path, data, res.sha)
       dirty.delete(path)
       saveDirtyRegistry()
+      if (lastConflict?.path === path) lastConflict = null
     } catch (e) {
       // Left in the dirty map (and the persisted registry); retried on the next periodic flush or close.
-      lastError = e instanceof Error ? e.message : `Échec de synchronisation de ${path}`
+      const message = e instanceof Error ? e.message : `Échec de synchronisation de ${path}`
+      lastError = message
+      // Un vrai conflit de SHA a un message dédié (voir githubStore.putFile) : dans ce cas,
+      // un simple "réessayer" échouerait indéfiniment avec le même SHA périmé — il faut un
+      // choix explicite (voir resolveConflictKeepLocal / resolveConflictDiscardLocal).
+      lastConflict = message.startsWith('Conflit') ? { path, label: PATH_LABELS[path] ?? path } : null
     }
   }
   flushing = false

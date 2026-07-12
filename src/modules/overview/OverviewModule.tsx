@@ -69,7 +69,8 @@ export default function OverviewModule({ onNavigate }: Props) {
   const { data: finances } = useFinancesData()
   const { data: travel } = useTravelData()
   const { data: health, save: saveHealth } = useHealthData()
-  const { error: syncError, syncNow } = useSyncManager()
+  const { error: syncError, syncNow, conflict, resolveConflictKeepLocal, resolveConflictDiscardLocal } =
+    useSyncManager()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
   const [permission, setPermission] = useState(getPermission())
 
@@ -155,16 +156,39 @@ export default function OverviewModule({ onNavigate }: Props) {
 
   return (
     <div>
-      {syncError && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-[20px] border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-5 py-3">
-          <span className="text-sm text-[var(--red)]">⚠ Échec de synchronisation : {syncError}</span>
-          <button
-            onClick={syncNow}
-            className="font-display shrink-0 rounded-full border border-[var(--red)]/50 px-3 py-1.5 text-xs font-semibold text-[var(--red)]"
-          >
-            Réessayer
-          </button>
+      {conflict ? (
+        <div className="mb-4 rounded-[20px] border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-5 py-3">
+          <div className="text-sm text-[var(--red)]">
+            ⚠ Conflit sur « {conflict.label} » : une autre version a été enregistrée depuis un autre appareil. Choisis
+            quelle version garder.
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              onClick={() => resolveConflictKeepLocal(conflict.path)}
+              className="font-display shrink-0 rounded-full border border-[var(--red)]/50 px-3 py-1.5 text-xs font-semibold text-[var(--red)]"
+            >
+              Garder ma version
+            </button>
+            <button
+              onClick={() => resolveConflictDiscardLocal(conflict.path)}
+              className="font-display shrink-0 rounded-full border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-muted)]"
+            >
+              Utiliser la version à jour
+            </button>
+          </div>
         </div>
+      ) : (
+        syncError && (
+          <div className="mb-4 flex items-center justify-between gap-3 rounded-[20px] border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-5 py-3">
+            <span className="text-sm text-[var(--red)]">⚠ Échec de synchronisation : {syncError}</span>
+            <button
+              onClick={syncNow}
+              className="font-display shrink-0 rounded-full border border-[var(--red)]/50 px-3 py-1.5 text-xs font-semibold text-[var(--red)]"
+            >
+              Réessayer
+            </button>
+          </div>
+        )
       )}
 
       <div className="mb-4">
