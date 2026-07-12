@@ -46,7 +46,7 @@ Configuration à faire une fois, manuellement : **Settings → Pages → Source:
 
 Module Finances désormais en parité complète avec le tracker patrimoine.html d'origine.
 
-- [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous)
+- [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous), et affichage des échéances des autres modules (tâches, échéances voiture, expirations de documents, rendez-vous et renouvellements santé, échéances d'objectifs) — clique dessus pour aller directement au module concerné
 - [x] Module Tâches — todo-list avec catégories, priorités, échéances (avec détection de retard), section "Terminées" repliable
 - [x] Module Habitudes — suivi quotidien/hebdomadaire avec streaks et mini heatmap des 14 derniers jours
 - [x] Module Voiture — véhicule(s), échéances (contrôle technique, vidange, assurance) avec alerte de retard, journal d'entretien avec coût total
