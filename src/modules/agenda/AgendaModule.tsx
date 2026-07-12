@@ -122,13 +122,17 @@ export default function AgendaModule({ onNavigate }: Props) {
     )
   }
 
-  const externalItems = buildExternalAgendaItems({
+  const allExternalItems = buildExternalAgendaItems({
     tasks: tasks ?? undefined,
     car: car ?? undefined,
     documents: documents ?? undefined,
     goals: goals ?? undefined,
     health: health ?? undefined,
   })
+  const overdueItems = allExternalItems
+    .filter((e) => e.overdue)
+    .sort((a, b) => a.date.localeCompare(b.date))
+  const externalItems = allExternalItems.filter((e) => !e.overdue)
 
   const localUpcoming = upcomingEvents(data).map((e) => ({ ...e, source: 'local' as const, module: undefined }))
   const merged = [
@@ -222,7 +226,34 @@ export default function AgendaModule({ onNavigate }: Props) {
         </div>
       )}
 
-      {merged.length === 0 && (
+      {overdueItems.length > 0 && (
+        <div className="mb-4 rounded-[20px] border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] p-6">
+          <div className="mb-3 text-sm font-medium text-[var(--red)]">En retard ({overdueItems.length})</div>
+          <div className="divide-y divide-[var(--red)]/20">
+            {overdueItems.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => onNavigate?.(e.module)}
+                className="flex w-full items-center justify-between gap-3 py-3.5 text-left"
+              >
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {e.title}
+                    <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+                      {e.module}
+                    </span>
+                  </div>
+                  <div className="text-xs text-[var(--red)]">
+                    {[fmtEventDate(e.date), e.detail].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {merged.length === 0 && overdueItems.length === 0 && (
         <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-10 text-center text-[var(--text-muted)]">
           <h3 className="font-display mb-2 text-xl text-[var(--text)]">Rien à venir</h3>
           <p>Ajoute un événement pour commencer.</p>
