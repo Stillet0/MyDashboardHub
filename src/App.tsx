@@ -91,7 +91,7 @@ function App() {
           ) : active === 'Finances' ? (
             <FinancesModule />
           ) : active === 'Agenda' ? (
-            <AgendaModule />
+            <AgendaModule onNavigate={(m) => setActive(m)} />
           ) : active === 'Tâches' ? (
             <TasksModule />
           ) : active === 'Habitudes' ? (

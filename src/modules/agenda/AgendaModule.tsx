@@ -3,6 +3,12 @@ import { useAgendaData } from '../../lib/useAgendaData'
 import { fmtEventDate, isToday, toDateKey, upcomingEvents, type AgendaEvent } from '../../lib/agenda'
 import { fetchUpcomingGoogleEvents, isConnected, type GoogleCalendarEvent } from '../../lib/googleCalendar'
 import GoogleCalendarConnect from './GoogleCalendarConnect'
+import { useTasksData } from '../../lib/useTasksData'
+import { useCarData } from '../../lib/useCarData'
+import { useDocumentsData } from '../../lib/useDocumentsData'
+import { useGoalsData } from '../../lib/useGoalsData'
+import { useHealthData } from '../../lib/useHealthData'
+import { buildExternalAgendaItems, type ExternalAgendaModule } from '../../lib/agendaAggregate'
 
 type Draft = { title: string; date: string; time: string; location: string; notes: string }
 
@@ -14,8 +20,15 @@ const emptyDraft = (): Draft => ({
   notes: '',
 })
 
-export default function AgendaModule() {
+type Props = { onNavigate?: (module: ExternalAgendaModule) => void }
+
+export default function AgendaModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useAgendaData()
+  const { data: tasks } = useTasksData()
+  const { data: car } = useCarData()
+  const { data: documents } = useDocumentsData()
+  const { data: goals } = useGoalsData()
+  const { data: health } = useHealthData()
   const [googleEvents, setGoogleEvents] = useState<GoogleCalendarEvent[]>([])
   const [googleError, setGoogleError] = useState<string | null>(null)
   const [googleLoading, setGoogleLoading] = useState(false)
@@ -109,10 +122,19 @@ export default function AgendaModule() {
     )
   }
 
-  const localUpcoming = upcomingEvents(data).map((e) => ({ ...e, source: 'local' as const }))
+  const externalItems = buildExternalAgendaItems({
+    tasks: tasks ?? undefined,
+    car: car ?? undefined,
+    documents: documents ?? undefined,
+    goals: goals ?? undefined,
+    health: health ?? undefined,
+  })
+
+  const localUpcoming = upcomingEvents(data).map((e) => ({ ...e, source: 'local' as const, module: undefined }))
   const merged = [
     ...localUpcoming,
-    ...googleEvents.map((e) => ({ ...e, source: 'google' as const, notes: undefined })),
+    ...googleEvents.map((e) => ({ ...e, source: 'google' as const, notes: undefined, module: undefined })),
+    ...externalItems.map((e) => ({ ...e, source: 'external' as const, location: undefined, notes: undefined })),
   ].sort((a, b) => {
     const dateCmp = a.date.localeCompare(b.date)
     if (dateCmp !== 0) return dateCmp
@@ -261,6 +283,23 @@ export default function AgendaModule() {
                       </button>
                     </div>
                   </div>
+                ) : e.source === 'external' ? (
+                  <button
+                    key={e.id}
+                    onClick={() => onNavigate?.(e.module)}
+                    className="flex w-full items-center justify-between gap-3 py-3.5 text-left"
+                  >
+                    <div>
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        {e.time && <span className="font-display text-[var(--gold)]">{e.time}</span>}
+                        {e.title}
+                        <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] text-[var(--text-muted)]">
+                          {e.module}
+                        </span>
+                      </div>
+                      {e.detail && <div className="text-xs text-[var(--text-muted)]">{e.detail}</div>}
+                    </div>
+                  </button>
                 ) : (
                   <div key={e.id} className="flex items-center justify-between gap-3 py-3.5">
                     <div>
