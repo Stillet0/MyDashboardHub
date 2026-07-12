@@ -27,6 +27,26 @@ Choisis le module le plus probable. Résous les dates relatives ("demain", "vend
 
 export class QuickAddError extends Error {}
 
+const DATE_FIELDS = ['dueDate', 'date', 'targetDate', 'expirationDate'] as const
+const STRICT_DATE = /^\d{4}-\d{2}-\d{2}$/
+
+/**
+ * L'IA ne respecte pas toujours à la lettre le format "YYYY-MM-DD" demandé dans le prompt.
+ * Une date mal formée (ex: horodatage ISO complet) ferait planter l'affichage plus tard
+ * (Intl.DateTimeFormat sur une Invalid Date) : on l'ignore ici plutôt que de la stocker,
+ * comme si le champ optionnel n'avait pas été fourni.
+ */
+function sanitizeDateFields(parsed: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...parsed }
+  for (const field of DATE_FIELDS) {
+    const value = out[field]
+    if (value !== undefined && (typeof value !== 'string' || !STRICT_DATE.test(value))) {
+      delete out[field]
+    }
+  }
+  return out
+}
+
 export async function parseQuickAdd(text: string): Promise<QuickAddResult> {
   const raw = await askAi(text, SYSTEM_PROMPT)
   const match = raw.match(/\{[\s\S]*\}/)
@@ -45,6 +65,10 @@ export async function parseQuickAdd(text: string): Promise<QuickAddResult> {
   }
   if (parsed.module === 'Documents' && typeof parsed.name !== 'string') {
     throw new QuickAddError("Je n'ai pas réussi à extraire un nom clair.")
+  }
+  parsed = sanitizeDateFields(parsed)
+  if ((parsed.module === 'Agenda' || parsed.module === 'Santé') && typeof parsed.date !== 'string') {
+    throw new QuickAddError("Je n'ai pas réussi à extraire une date valide.")
   }
   return parsed as QuickAddResult
 }

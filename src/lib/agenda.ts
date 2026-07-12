@@ -39,9 +39,14 @@ export function toDateKey(d: Date): string {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 }
 
+// Un champ date mal formé (ex: renvoyé par l'IA de l'Ajout rapide sans respecter strictement
+// "YYYY-MM-DD") ne doit jamais faire planter tout l'écran : on retombe sur une valeur neutre
+// plutôt que de laisser `Intl.DateTimeFormat` lever une exception non rattrapée.
 export function fmtEventDate(dateKey: string): string {
-  const [y, m, d] = dateKey.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateKey)
+  if (!match) return dateKey
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  if (Number.isNaN(date.getTime())) return dateKey
   const s = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(date)
   return s.charAt(0).toUpperCase() + s.slice(1)
 }

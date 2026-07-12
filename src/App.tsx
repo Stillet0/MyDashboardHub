@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import TokenGate from './components/TokenGate'
+import ErrorBoundary from './components/ErrorBoundary'
 import Logo from './components/Logo'
 import { clearToken } from './lib/githubStore'
 import FinancesModule from './modules/finances/FinancesModule'
@@ -104,31 +105,33 @@ function App() {
         </nav>
 
         <main className="mx-auto max-w-[880px] p-5 pb-20">
-          {active === 'Aperçu' ? (
-            <OverviewModule onNavigate={(m) => setActive(m)} />
-          ) : active === 'Finances' ? (
-            <FinancesModule />
-          ) : active === 'Agenda' ? (
-            <AgendaModule onNavigate={(m) => setActive(m)} />
-          ) : active === 'Tâches' ? (
-            <TasksModule />
-          ) : active === 'Habitudes' ? (
-            <HabitsModule />
-          ) : active === 'Voiture' ? (
-            <CarModule />
-          ) : active === 'Documents' ? (
-            <DocumentsModule />
-          ) : active === 'Santé' ? (
-            <HealthModule />
-          ) : active === 'Objectifs' ? (
-            <GoalsModule />
-          ) : active === 'Voyages' ? (
-            <TravelModule />
-          ) : (
-            <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
-              Module « {active} » à venir.
-            </div>
-          )}
+          <ErrorBoundary key={active}>
+            {active === 'Aperçu' ? (
+              <OverviewModule onNavigate={(m) => setActive(m)} />
+            ) : active === 'Finances' ? (
+              <FinancesModule />
+            ) : active === 'Agenda' ? (
+              <AgendaModule onNavigate={(m) => setActive(m)} />
+            ) : active === 'Tâches' ? (
+              <TasksModule />
+            ) : active === 'Habitudes' ? (
+              <HabitsModule />
+            ) : active === 'Voiture' ? (
+              <CarModule />
+            ) : active === 'Documents' ? (
+              <DocumentsModule />
+            ) : active === 'Santé' ? (
+              <HealthModule />
+            ) : active === 'Objectifs' ? (
+              <GoalsModule />
+            ) : active === 'Voyages' ? (
+              <TravelModule />
+            ) : (
+              <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
+                Module « {active} » à venir.
+              </div>
+            )}
+          </ErrorBoundary>
         </main>
       </div>
     </TokenGate>
