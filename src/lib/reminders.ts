@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import { isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
+import { deadlineKmRemaining, fmtKm, isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
@@ -18,6 +18,12 @@ export type Reminder = {
 }
 
 const SOON_WINDOW_DAYS = 7
+// Seuils équivalents pour les échéances au kilométrage (ex: vidange dans 65 000 km) :
+// pas de notion de "jour" pour un kilométrage, donc on approxime avec des paliers de distance.
+const KM_TODAY_WINDOW = 300
+const KM_SOON_WINDOW = 1000
+
+const URGENCY_ORDER: Record<Urgency, number> = { overdue: 0, today: 1, soon: 2 }
 
 export function toDateKey(d: Date): string {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
@@ -37,6 +43,19 @@ function urgencyForDate(dateKey: string): Urgency | null {
   if (days === 0) return 'today'
   if (days <= SOON_WINDOW_DAYS) return 'soon'
   return null
+}
+
+function urgencyForKm(kmRemaining: number): Urgency | null {
+  if (kmRemaining <= 0) return 'overdue'
+  if (kmRemaining <= KM_TODAY_WINDOW) return 'today'
+  if (kmRemaining <= KM_SOON_WINDOW) return 'soon'
+  return null
+}
+
+function mostUrgent(a: Urgency | null, b: Urgency | null): Urgency | null {
+  if (!a) return b
+  if (!b) return a
+  return URGENCY_ORDER[a] <= URGENCY_ORDER[b] ? a : b
 }
 
 export function buildReminders(input: {
@@ -68,15 +87,26 @@ export function buildReminders(input: {
   if (input.car) {
     const vehicleName = (id: string): string | undefined =>
       input.car!.vehicles.find((v: Vehicle) => v.id === id)?.name
+    const vehicleMileage = (id: string): number => input.car!.vehicles.find((v: Vehicle) => v.id === id)?.currentMileage ?? 0
     input.car.deadlines.forEach((d) => {
       if (isDeadlineDone(d)) return
-      const urgency = urgencyForDate(d.dueDate)
+      const kmRemaining = deadlineKmRemaining(d, vehicleMileage(d.vehicleId))
+      const urgency = mostUrgent(
+        d.dueDate ? urgencyForDate(d.dueDate) : null,
+        kmRemaining !== null ? urgencyForKm(kmRemaining) : null,
+      )
       if (!urgency) return
+      const detail = [
+        vehicleName(d.vehicleId),
+        kmRemaining !== null ? (kmRemaining <= 0 ? `${fmtKm(Math.abs(kmRemaining))} dépassés` : `${fmtKm(kmRemaining)} restants`) : undefined,
+      ]
+        .filter(Boolean)
+        .join(' · ')
       out.push({
         id: 'car_' + d.id,
         module: 'Voiture',
         title: d.label,
-        detail: vehicleName(d.vehicleId),
+        detail: detail || undefined,
         dueDate: d.dueDate,
         urgency,
       })
@@ -192,9 +222,8 @@ export function buildReminders(input: {
     })
   })
 
-  const order: Record<Urgency, number> = { overdue: 0, today: 1, soon: 2 }
   return out.sort((a, b) => {
-    if (order[a.urgency] !== order[b.urgency]) return order[a.urgency] - order[b.urgency]
+    if (URGENCY_ORDER[a.urgency] !== URGENCY_ORDER[b.urgency]) return URGENCY_ORDER[a.urgency] - URGENCY_ORDER[b.urgency]
     return (a.dueDate ?? '').localeCompare(b.dueDate ?? '')
   })
 }

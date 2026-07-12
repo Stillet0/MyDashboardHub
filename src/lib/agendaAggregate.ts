@@ -40,7 +40,9 @@ export function buildExternalAgendaItems(input: {
     const vehicleName = (id: string): string | undefined =>
       input.car!.vehicles.find((v: Vehicle) => v.id === id)?.name
     input.car.deadlines.forEach((d) => {
-      if (isDeadlineDone(d) || d.dueDate < todayKey) return
+      // Une échéance uniquement au kilométrage n'a pas de date à placer sur le calendrier ;
+      // elle reste visible dans le module Voiture et les rappels de l'Aperçu.
+      if (isDeadlineDone(d) || !d.dueDate || d.dueDate < todayKey) return
       out.push({ id: 'car_' + d.id, title: d.label, date: d.dueDate, detail: vehicleName(d.vehicleId), module: 'Voiture' })
     })
     input.car.maintenanceLog.forEach((e) => {

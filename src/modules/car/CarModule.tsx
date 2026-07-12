@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { useCarData } from '../../lib/useCarData'
 import {
-  daysUntil,
   deadlinesForVehicle,
+  describeDeadline,
+  describeDeadlineDone,
   fmtDate,
   fmtEuro,
   fmtKm,
   isDeadlineDone,
+  isDeadlineOverdue,
   isMaintenanceDone,
-  isOverdue,
   logForVehicle,
   toDateKey,
   DEADLINE_PRESETS,
@@ -18,11 +19,11 @@ import {
 } from '../../lib/car'
 
 type VehicleDraft = { name: string; currentMileage: string }
-type DeadlineDraft = { label: string; dueDate: string; notes: string }
+type DeadlineDraft = { label: string; dueDate: string; dueMileage: string; notes: string }
 type LogDraft = { date: string; label: string; mileage: string; cost: string; notes: string; done: boolean }
 
 const emptyVehicleDraft = (): VehicleDraft => ({ name: '', currentMileage: '' })
-const emptyDeadlineDraft = (): DeadlineDraft => ({ label: DEADLINE_PRESETS[0], dueDate: '', notes: '' })
+const emptyDeadlineDraft = (): DeadlineDraft => ({ label: DEADLINE_PRESETS[0], dueDate: '', dueMileage: '', notes: '' })
 const emptyLogDraft = (): LogDraft => ({
   date: toDateKey(new Date()),
   label: '',
@@ -117,8 +118,9 @@ export default function CarModule() {
 
   async function handleAddDeadline() {
     if (!data || !selected) return
-    if (!deadlineDraft.label.trim() || !deadlineDraft.dueDate) {
-      setFormError('Type et date sont requis.')
+    const mileage = deadlineDraft.dueMileage ? Number(deadlineDraft.dueMileage.replace(',', '.')) : undefined
+    if (!deadlineDraft.label.trim() || (!deadlineDraft.dueDate && !mileage)) {
+      setFormError('Type requis, et au moins une date ou un kilométrage d\'échéance.')
       return
     }
     setFormError(null)
@@ -126,7 +128,8 @@ export default function CarModule() {
       id: 'dl_' + Math.random().toString(36).slice(2, 10),
       vehicleId: selected.id,
       label: deadlineDraft.label.trim(),
-      dueDate: deadlineDraft.dueDate,
+      dueDate: deadlineDraft.dueDate || undefined,
+      dueMileage: mileage,
       notes: deadlineDraft.notes.trim() || undefined,
     }
     await save(
@@ -139,14 +142,20 @@ export default function CarModule() {
 
   function startEditDeadline(d: Deadline) {
     setEditingDeadlineId(d.id)
-    setEditDeadlineDraft({ label: d.label, dueDate: d.dueDate, notes: d.notes ?? '' })
+    setEditDeadlineDraft({
+      label: d.label,
+      dueDate: d.dueDate ?? '',
+      dueMileage: d.dueMileage !== undefined ? String(d.dueMileage) : '',
+      notes: d.notes ?? '',
+    })
     setFormError(null)
   }
 
   async function handleEditDeadlineSave(id: string) {
     if (!data) return
-    if (!editDeadlineDraft.label.trim() || !editDeadlineDraft.dueDate) {
-      setFormError('Type et date sont requis.')
+    const mileage = editDeadlineDraft.dueMileage ? Number(editDeadlineDraft.dueMileage.replace(',', '.')) : undefined
+    if (!editDeadlineDraft.label.trim() || (!editDeadlineDraft.dueDate && !mileage)) {
+      setFormError('Type requis, et au moins une date ou un kilométrage d\'échéance.')
       return
     }
     setFormError(null)
@@ -155,7 +164,8 @@ export default function CarModule() {
         ? {
             ...d,
             label: editDeadlineDraft.label.trim(),
-            dueDate: editDeadlineDraft.dueDate,
+            dueDate: editDeadlineDraft.dueDate || undefined,
+            dueMileage: mileage,
             notes: editDeadlineDraft.notes.trim() || undefined,
           }
         : d,
@@ -393,6 +403,7 @@ export default function CarModule() {
                           </option>
                         ))}
                       </select>
+                      <div />
                       <input
                         type="date"
                         value={deadlineDraft.dueDate}
@@ -400,7 +411,17 @@ export default function CarModule() {
                         style={{ colorScheme: 'dark' }}
                         className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                       />
+                      <input
+                        value={deadlineDraft.dueMileage}
+                        onChange={(e) => setDeadlineDraft({ ...deadlineDraft, dueMileage: e.target.value })}
+                        placeholder="Kilométrage d'échéance (ex: 65000)"
+                        inputMode="decimal"
+                        className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                      />
                     </div>
+                    <p className="mt-1.5 text-xs text-[var(--text-faint)]">
+                      Date, kilométrage, ou les deux — au moins un des deux est requis.
+                    </p>
                     <div className="mt-2 flex gap-2">
                       <button
                         onClick={handleAddDeadline}
@@ -434,6 +455,7 @@ export default function CarModule() {
                               }
                               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                             />
+                            <div />
                             <input
                               type="date"
                               value={editDeadlineDraft.dueDate}
@@ -441,6 +463,15 @@ export default function CarModule() {
                                 setEditDeadlineDraft({ ...editDeadlineDraft, dueDate: e.target.value })
                               }
                               style={{ colorScheme: 'dark' }}
+                              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                            />
+                            <input
+                              value={editDeadlineDraft.dueMileage}
+                              onChange={(e) =>
+                                setEditDeadlineDraft({ ...editDeadlineDraft, dueMileage: e.target.value })
+                              }
+                              placeholder="Kilométrage d'échéance"
+                              inputMode="decimal"
                               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                             />
                           </div>
@@ -480,15 +511,13 @@ export default function CarModule() {
                               </div>
                               {!isDeadlineDone(d) && (
                                 <div
-                                  className={`text-xs ${isOverdue(d.dueDate) ? 'text-[var(--red)]' : 'text-[var(--text-muted)]'}`}
+                                  className={`text-xs ${isDeadlineOverdue(d, selected.currentMileage) ? 'text-[var(--red)]' : 'text-[var(--text-muted)]'}`}
                                 >
-                                  {isOverdue(d.dueDate)
-                                    ? `En retard depuis le ${fmtDate(d.dueDate)}`
-                                    : `${fmtDate(d.dueDate)} · dans ${daysUntil(d.dueDate)} j`}
+                                  {describeDeadline(d, selected.currentMileage)}
                                 </div>
                               )}
                               {isDeadlineDone(d) && (
-                                <div className="text-xs text-[var(--text-faint)]">{fmtDate(d.dueDate)}</div>
+                                <div className="text-xs text-[var(--text-faint)]">{describeDeadlineDone(d)}</div>
                               )}
                             </div>
                           </div>
