@@ -71,7 +71,7 @@ MonHub peut utiliser l'API gratuite **Google Gemini** pour des fonctionnalités 
 - **Voyages** : « ✨ Suggestions de visites » propose des lieux et activités incontournables pour la destination du voyage, ajoutables à une checklist du voyage, « ✨ Sites utiles » suggère des sites de réservation/transport/guides pour préparer le séjour.
 - **Habitudes** : « ✨ Conseil » donne un conseil court adapté à la série en cours (ou à la difficulté de s'y tenir).
 - **Finances** : « ✨ Analyse du mois » donne une analyse rapide de la situation financière du mois (patrimoine, répartition, cashflow).
-- **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours, et « ✨ Ajout rapide » permet de créer un élément en tapant une simple phrase (ex : *"Dentiste vendredi 15h"*, *"Renouveler le passeport avant mars"*) — l'IA identifie automatiquement le bon module (Tâches, Agenda, Santé, Objectifs ou Documents), en extrait les champs (titre, date, catégorie…), puis affiche un aperçu à confirmer avant tout ajout.
+- **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours, et « ✨ Ajout rapide » permet de créer un élément en tapant une simple phrase (ex : *"Dentiste vendredi 15h"*, *"Renouveler le passeport avant mars"*) — l'IA identifie automatiquement le bon module (Tâches, Agenda, Santé, Objectifs ou Documents), en extrait les champs (titre, date, catégorie…), puis affiche un aperçu à confirmer avant tout ajout. Les dates extraites par l'IA sont validées avant d'être enregistrées (format strict `YYYY-MM-DD`) : un champ mal formé est simplement ignoré plutôt que stocké tel quel.
 
 Les suggestions de sites/outils restent des recommandations en texte simple (jamais de lien cliquable auto-généré) : l'IA est incitée à ne citer que des ressources réputées et à s'abstenir si elle n'est pas sûre qu'elles existent, mais comme toute IA générative elle peut se tromper — vérifie toujours par toi-même avant de t'y fier.
 
@@ -108,6 +108,8 @@ Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Syn
   - **Utiliser la version à jour** : abandonne la modification locale en attente et recharge la version enregistrée par l'autre appareil.
 
 **Aucune modification n'est jamais seulement "en mémoire"** : chaque édition est écrite immédiatement dans `localStorage` (donnée + liste de ce qui reste à synchroniser), donc même une fermeture brutale (crash, coupure réseau, batterie) avant la prochaine synchronisation ne perd rien. À la réouverture de l'app, toute modification non encore synchronisée est visible normalement et une tentative de synchronisation est relancée automatiquement.
+
+**Robustesse** : chaque onglet est isolé par un error boundary — si une donnée corrompue ou inattendue fait planter l'affichage d'un module, seul cet onglet affiche un message d'erreur récupérable (le reste de l'app, y compris la navigation, continue de fonctionner) plutôt que de laisser tout l'écran devenir noir. Les dates au format inattendu (`YYYY-MM-DD` attendu) sont aussi tolérées partout où elles sont affichées, sans jamais faire planter le rendu.
 
 ## Connecter Google Calendar (optionnel)
 

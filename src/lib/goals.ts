@@ -36,9 +36,14 @@ export function isOverdue(goal: Goal): boolean {
   return goal.targetDate < toDateKey(new Date())
 }
 
+// Un champ date mal formé (ex: renvoyé par l'IA de l'Ajout rapide sans respecter strictement
+// "YYYY-MM-DD") ne doit jamais faire planter tout l'écran : on retombe sur une valeur neutre
+// plutôt que de laisser `Intl.DateTimeFormat` lever une exception non rattrapée.
 export function fmtDate(dateKey: string): string {
-  const [y, m, d] = dateKey.split('-').map(Number)
-  const date = new Date(y, m - 1, d)
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(dateKey)
+  if (!match) return dateKey
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  if (Number.isNaN(date.getTime())) return dateKey
   return new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
 
