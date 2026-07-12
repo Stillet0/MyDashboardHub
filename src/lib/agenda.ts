@@ -47,7 +47,9 @@ export function fmtEventDate(dateKey: string): string {
   if (!match) return dateKey
   const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
   if (Number.isNaN(date.getTime())) return dateKey
-  const s = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }).format(date)
+  const s = new Intl.DateTimeFormat('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }).format(
+    date,
+  )
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
