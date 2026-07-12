@@ -299,13 +299,19 @@ export default function GoalsModule() {
         )}
 
         {!g.done && (
-          <div className="mt-2.5 ml-8">
+          <div className="mt-2.5 ml-8 flex flex-wrap gap-2">
             <AiSuggestPanel
               label="Générer un plan d'action"
               system="Tu es un coach en planification d'objectifs. Réponds uniquement par une liste numérotée de 4 à 7 étapes concrètes et réalistes pour atteindre l'objectif, en français, sans introduction ni conclusion."
               prompt={`Objectif : ${g.title}${g.description ? `\nDescription : ${g.description}` : ''}${g.targetDate ? `\nÉchéance visée : ${fmtDate(g.targetDate)}` : ''}\nProgression actuelle : ${g.progress}%.\nPropose un plan d'action étape par étape.`}
               applyLabel="Ajouter au plan d'action"
               onApply={(items) => handleAddSteps(g, items)}
+            />
+            <AiSuggestPanel
+              label="Sites utiles"
+              system="Tu es un assistant qui recommande des ressources en ligne fiables et bien connues (sites, outils, applications, formations) pour aider à atteindre un objectif personnel. Réponds en français par une liste numérotée de 3 à 5 ressources réelles et réputées, au format 'Nom — à quoi ça sert' (pas d'URL brute, pas de lien, juste le nom du site/outil et son utilité). Sans introduction ni conclusion. Si tu n'es pas certain qu'une ressource existe vraiment, ne la propose pas."
+              prompt={`Objectif : ${g.title}${g.description ? `\nDescription : ${g.description}` : ''}\nQuels sites ou outils en ligne pourraient m'aider à atteindre cet objectif ?`}
+              mode="text"
             />
           </div>
         )}

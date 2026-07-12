@@ -59,16 +59,20 @@ Tous les modules de la feuille de route initiale sont en place.
 
 - [x] Service worker (mode hors-ligne) + sauvegarde automatique toutes les 5 min et à la fermeture de l'app
 - [x] Onglet "Aperçu" — tableau de bord résumant chaque module en un coup d'œil (patrimoine net, prochain événement, tâches critiques, objectifs en cours, habitudes du jour, prochaine échéance voiture/document, prochain voyage), + rappels agrégés (tâches, échéances voiture, documents qui expirent, objectifs en retard, événements du jour, habitudes à ne pas casser) et notifications navigateur/OS quand l'app est ouverte
-- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, plan de la journée priorisé sur l'onglet Aperçu
+- [x] Fonctionnalités intelligentes (IA Gemini, optionnel) — décomposition de tâches en étapes, aide pour démarrer une tâche bloquée, suggestions de sites/outils utiles (tâches, objectifs, voyages), génération de plan d'action pour les objectifs, suggestions de lieux à visiter pour les voyages, conseils pour tenir ses habitudes, analyse mensuelle des finances, plan de la journée priorisé sur l'onglet Aperçu
 
 ## Fonctionnalités intelligentes (IA)
 
 MonHub peut utiliser l'API gratuite **Google Gemini** pour des fonctionnalités d'assistance, en plus de tout ce qui précède :
 
-- **Tâches** : « ✨ Décomposer en étapes » propose une liste de sous-étapes concrètes (ajoutables en un clic comme sous-tâches cochables), « ✨ Aide à démarrer » donne un conseil court pour débloquer une tâche.
-- **Objectifs** : « ✨ Générer un plan d'action » propose 4 à 7 étapes réalistes vers l'objectif, ajoutables comme checklist sur l'objectif.
-- **Voyages** : « ✨ Suggestions de visites » propose des lieux et activités incontournables pour la destination du voyage, ajoutables à une checklist du voyage.
+- **Tâches** : « ✨ Décomposer en étapes » propose une liste de sous-étapes concrètes (ajoutables en un clic comme sous-tâches cochables), « ✨ Aide à démarrer » donne un conseil court pour débloquer une tâche, « ✨ Sites utiles » suggère des sites/outils réputés pertinents pour la tâche.
+- **Objectifs** : « ✨ Générer un plan d'action » propose 4 à 7 étapes réalistes vers l'objectif, ajoutables comme checklist sur l'objectif, « ✨ Sites utiles » suggère des ressources en ligne pour progresser.
+- **Voyages** : « ✨ Suggestions de visites » propose des lieux et activités incontournables pour la destination du voyage, ajoutables à une checklist du voyage, « ✨ Sites utiles » suggère des sites de réservation/transport/guides pour préparer le séjour.
+- **Habitudes** : « ✨ Conseil » donne un conseil court adapté à la série en cours (ou à la difficulté de s'y tenir).
+- **Finances** : « ✨ Analyse du mois » donne une analyse rapide de la situation financière du mois (patrimoine, répartition, cashflow).
 - **Aperçu** : « ✨ Plan de la journée » résume ce qu'il faut prioriser en fonction des rappels en cours.
+
+Les suggestions de sites/outils restent des recommandations en texte simple (jamais de lien cliquable auto-généré) : l'IA est incitée à ne citer que des ressources réputées et à s'abstenir si elle n'est pas sûre qu'elles existent, mais comme toute IA générative elle peut se tromper — vérifie toujours par toi-même avant de t'y fier.
 
 C'est **entièrement optionnel** : sans clé configurée, ces boutons n'apparaissent simplement pas et le reste de l'app fonctionne normalement. Pour l'activer :
 
@@ -76,7 +80,7 @@ C'est **entièrement optionnel** : sans clé configurée, ces boutons n'apparais
 2. Récupère une clé API gratuite sur [Google AI Studio](https://aistudio.google.com/apikey) (compte Google, aucune carte bancaire requise)
 3. Colle la clé et enregistre
 
-La clé reste uniquement dans le navigateur (`localStorage`), comme le token GitHub. Les appels partent directement du navigateur vers l'API Gemini (modèle `gemini-2.5-flash`) — aucun serveur intermédiaire. Le quota gratuit de Gemini est large pour un usage personnel mais n'est pas illimité.
+La clé reste uniquement dans le navigateur (`localStorage`), comme le token GitHub. Les appels partent directement du navigateur vers l'API Gemini — aucun serveur intermédiaire. MonHub demande à ta clé la liste de ses modèles disponibles et choisit automatiquement un modèle "flash" (rapide et gratuit), pour rester robuste si Google renomme ou déprécie un modèle. Le quota gratuit de Gemini est large pour un usage personnel mais n'est pas illimité.
 
 ## Aperçu
 

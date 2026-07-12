@@ -10,6 +10,7 @@ import {
   type Frequency,
   type Habit,
 } from '../../lib/habits'
+import AiSuggestPanel from '../../components/AiSuggestPanel'
 
 type Draft = { name: string; frequency: Frequency; color: string }
 
@@ -260,6 +261,14 @@ export default function HabitsModule() {
                     style={{ background: isDoneOn(h, d) ? h.color : 'var(--surface-2)' }}
                   />
                 ))}
+              </div>
+              <div className="mt-3">
+                <AiSuggestPanel
+                  label="Conseil"
+                  system="Tu es un coach bienveillant spécialisé dans la formation d'habitudes. Donne un conseil court (2 à 4 phrases), en français, en texte fluide sans liste, adapté à la situation actuelle de cette habitude (série en cours, ou difficulté à s'y tenir)."
+                  prompt={`Habitude : ${h.name} (${h.frequency === 'quotidien' ? 'quotidienne' : 'hebdomadaire'})\nSérie actuelle : ${streak} ${h.frequency === 'quotidien' ? 'jours' : 'semaines'}${!doneNow ? ', pas encore faite pour la période en cours' : ''}.\nDonne-moi un conseil pour m'aider à tenir cette habitude.`}
+                  mode="text"
+                />
               </div>
             </div>
           )
