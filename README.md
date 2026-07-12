@@ -49,7 +49,7 @@ Module Finances désormais en parité complète avec le tracker patrimoine.html 
 - [x] Module Agenda — événements locaux (ajout/modification/suppression, écriture directe dans `monhub-data`), lecture seule de Google Calendar en complément (voir configuration ci-dessous), et affichage des échéances des autres modules (tâches, échéances voiture, expirations de documents, rendez-vous et renouvellements santé, échéances d'objectifs) — clique dessus pour aller directement au module concerné
 - [x] Module Tâches — todo-list avec catégories, priorités, échéances (avec détection de retard), section "Terminées" repliable
 - [x] Module Habitudes — suivi quotidien/hebdomadaire avec streaks et mini heatmap des 14 derniers jours
-- [x] Module Voiture — véhicule(s), échéances (contrôle technique, vidange, assurance) avec alerte de retard, journal d'entretien avec coût total
+- [x] Module Voiture — véhicule(s), échéances (contrôle technique, vidange, assurance) avec alerte de retard, journal d'entretien avec coût total (calculé sur les entretiens faits uniquement) et statut fait/prévu par entretien — les entretiens prévus (non faits) apparaissent aussi dans les rappels et sur l'Agenda
 - [x] Module Documents — références importantes par catégorie avec dates d'expiration (alerte expiré/bientôt expiré) — pas de liens Drive (non souhaité)
 - [x] Module Objectifs — goals long terme avec progression manuelle, échéance optionnelle, étiquette de module lié (ex: Finances, Habitudes), section "Atteints" repliable
 - [x] Module Voyages — voyages (destination, dates, budget), dépenses par voyage avec suivi budget vs réalisé, voyages passés grisés

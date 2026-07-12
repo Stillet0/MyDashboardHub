@@ -6,6 +6,7 @@ import {
   fmtDate,
   fmtEuro,
   fmtKm,
+  isMaintenanceDone,
   isOverdue,
   logForVehicle,
   toDateKey,
@@ -17,7 +18,7 @@ import {
 
 type VehicleDraft = { name: string; currentMileage: string }
 type DeadlineDraft = { label: string; dueDate: string; notes: string }
-type LogDraft = { date: string; label: string; mileage: string; cost: string; notes: string }
+type LogDraft = { date: string; label: string; mileage: string; cost: string; notes: string; done: boolean }
 
 const emptyVehicleDraft = (): VehicleDraft => ({ name: '', currentMileage: '' })
 const emptyDeadlineDraft = (): DeadlineDraft => ({ label: DEADLINE_PRESETS[0], dueDate: '', notes: '' })
@@ -27,6 +28,7 @@ const emptyLogDraft = (): LogDraft => ({
   mileage: '',
   cost: '',
   notes: '',
+  done: true,
 })
 
 export default function CarModule() {
@@ -185,6 +187,7 @@ export default function CarModule() {
       mileage: logDraft.mileage ? Number(logDraft.mileage.replace(',', '.')) : undefined,
       cost: logDraft.cost ? Number(logDraft.cost.replace(',', '.')) : undefined,
       notes: logDraft.notes.trim() || undefined,
+      done: logDraft.done,
     }
     await save(
       { ...data, maintenanceLog: [...data.maintenanceLog, newEntry] },
@@ -192,6 +195,16 @@ export default function CarModule() {
     )
     setLogDraft(emptyLogDraft())
     setAddingLog(false)
+  }
+
+  async function toggleLogDone(e: MaintenanceEntry) {
+    if (!data) return
+    const nowDone = !isMaintenanceDone(e)
+    const nextLog = data.maintenanceLog.map((x) => (x.id === e.id ? { ...x, done: nowDone } : x))
+    await save(
+      { ...data, maintenanceLog: nextLog },
+      `Voiture: entretien "${e.label}" ${nowDone ? 'marqué fait' : 'marqué à faire'}`,
+    )
   }
 
   async function handleDeleteLog(e: MaintenanceEntry) {
@@ -205,7 +218,7 @@ export default function CarModule() {
 
   const deadlines = selected ? deadlinesForVehicle(data, selected.id) : []
   const log = selected ? logForVehicle(data, selected.id) : []
-  const totalCost = log.reduce((s, e) => s + (e.cost ?? 0), 0)
+  const totalCost = log.filter(isMaintenanceDone).reduce((s, e) => s + (e.cost ?? 0), 0)
 
   return (
     <div>
@@ -517,6 +530,14 @@ export default function CarModule() {
                         inputMode="decimal"
                         className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                       />
+                      <label className="flex items-center gap-2 text-sm text-[var(--text-muted)] sm:col-span-2">
+                        <input
+                          type="checkbox"
+                          checked={logDraft.done}
+                          onChange={(e) => setLogDraft({ ...logDraft, done: e.target.checked })}
+                        />
+                        Déjà fait (décoche pour un entretien prévu)
+                      </label>
                     </div>
                     <div className="mt-2 flex gap-2">
                       <button
@@ -540,29 +561,50 @@ export default function CarModule() {
                   <p className="text-sm text-[var(--text-muted)]">Aucun entretien enregistré.</p>
                 ) : (
                   <div className="divide-y divide-[var(--border)]">
-                    {log.map((e) => (
-                      <div key={e.id} className="flex items-center justify-between gap-3 py-3">
-                        <div>
-                          <div className="text-sm font-medium">{e.label}</div>
-                          <div className="text-xs text-[var(--text-muted)]">
-                            {fmtDate(e.date)}
-                            {e.mileage !== undefined ? ` · ${fmtKm(e.mileage)}` : ''}
+                    {log.map((e) => {
+                      const done = isMaintenanceDone(e)
+                      return (
+                        <div key={e.id} className="flex items-center justify-between gap-3 py-3">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <button
+                              onClick={() => toggleLogDone(e)}
+                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                                done ? 'border-[var(--emerald)] bg-[var(--emerald)]' : 'border-[var(--border)]'
+                              }`}
+                              title={done ? 'Marquer à faire' : 'Marquer fait'}
+                            >
+                              {done && <span className="text-xs text-[#08090b]">✓</span>}
+                            </button>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 text-sm font-medium">
+                                {e.label}
+                                {!done && (
+                                  <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] text-[var(--gold)]">
+                                    Prévu
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-xs text-[var(--text-muted)]">
+                                {fmtDate(e.date)}
+                                {e.mileage !== undefined ? ` · ${fmtKm(e.mileage)}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            {e.cost !== undefined && (
+                              <span className="font-display text-sm text-[var(--gold)]">{fmtEuro(e.cost)}</span>
+                            )}
+                            <button
+                              onClick={() => handleDeleteLog(e)}
+                              title="Supprimer"
+                              className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--red)]"
+                            >
+                              ✕
+                            </button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                          {e.cost !== undefined && (
-                            <span className="font-display text-sm text-[var(--gold)]">{fmtEuro(e.cost)}</span>
-                          )}
-                          <button
-                            onClick={() => handleDeleteLog(e)}
-                            title="Supprimer"
-                            className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--red)]"
-                          >
-                            ✕
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </div>

@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import type { CarData, Vehicle } from './car'
+import { isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { HealthData } from './health'
@@ -42,6 +42,10 @@ export function buildExternalAgendaItems(input: {
     input.car.deadlines.forEach((d) => {
       if (d.dueDate < todayKey) return
       out.push({ id: 'car_' + d.id, title: d.label, date: d.dueDate, detail: vehicleName(d.vehicleId), module: 'Voiture' })
+    })
+    input.car.maintenanceLog.forEach((e) => {
+      if (isMaintenanceDone(e) || e.date < todayKey) return
+      out.push({ id: 'car_log_' + e.id, title: e.label, date: e.date, detail: vehicleName(e.vehicleId), module: 'Voiture' })
     })
   }
 
