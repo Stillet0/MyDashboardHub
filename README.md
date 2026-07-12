@@ -101,7 +101,11 @@ Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vr
   - automatiquement à la **fermeture/mise en arrière-plan de l'app** (changement d'onglet, verrouillage du téléphone, fermeture) via les événements `visibilitychange`/`pagehide`,
   - ou manuellement en cliquant sur l'indicateur "● Non synchronisé" en haut de l'écran.
 
-Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Synchronisation…` / `⚠ Échec de synchro`) est visible en permanence dans l'en-tête. Comme avant, chaque écriture est protégée par le SHA du fichier : si un autre appareil a modifié la donnée entre-temps, l'écriture est refusée plutôt que d'écraser silencieusement — et depuis peu, la raison exacte d'un échec (conflit, token invalide, erreur réseau…) s'affiche clairement dans l'en-tête et sur l'onglet Aperçu, avec un bouton "Réessayer", plutôt que d'échouer silencieusement.
+Le statut de synchronisation (`✓ Synchronisé` / `● Non synchronisé` / `Synchronisation…` / `⚠ Échec de synchro`) est visible en permanence dans l'en-tête. Comme avant, chaque écriture est protégée par le SHA du fichier : si un autre appareil a modifié la donnée entre-temps, l'écriture est refusée plutôt que d'écraser silencieusement — et la raison exacte d'un échec (conflit, token invalide, erreur réseau…) s'affiche clairement dans l'en-tête et sur l'onglet Aperçu.
+
+**Résolution de conflit** : un simple "réessayer" ne suffit pas à résoudre un vrai conflit — la modification en attente garde le SHA périmé qui a causé le refus, donc retenter échouerait indéfiniment. Quand un conflit réel est détecté (`⚠ Conflit sur {module}` dans l'en-tête), l'onglet Aperçu affiche un choix explicite plutôt que de trancher automatiquement :
+  - **Garder ma version** : reprend le SHA à jour du fichier distant et y écrase la modification locale en attente.
+  - **Utiliser la version à jour** : abandonne la modification locale en attente et recharge la version enregistrée par l'autre appareil.
 
 **Aucune modification n'est jamais seulement "en mémoire"** : chaque édition est écrite immédiatement dans `localStorage` (donnée + liste de ce qui reste à synchroniser), donc même une fermeture brutale (crash, coupure réseau, batterie) avant la prochaine synchronisation ne perd rien. À la réouverture de l'app, toute modification non encore synchronisée est visible normalement et une tentative de synchronisation est relancée automatiquement.
 

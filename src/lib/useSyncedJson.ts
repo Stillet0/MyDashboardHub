@@ -13,9 +13,17 @@ export function useSyncedJson<T>(path: string, defaultValue: T) {
   const [syncing, setSyncing] = useState(isFlushing())
 
   useEffect(() => {
-    const unsubscribe = onSyncStateChange(() => setSyncing(isFlushing()))
+    const unsubscribe = onSyncStateChange(() => {
+      setSyncing(isFlushing())
+      // Une résolution de conflit (garder/abandonner) touche directement le cache sans
+      // passer par `save()` : on relit le cache dès que ce chemin n'est plus en attente.
+      if (!isDirty(path)) {
+        const cached = cacheRead<T>(path)
+        if (cached) setData(cached.data)
+      }
+    })
     return unsubscribe
-  }, [])
+  }, [path])
 
   useEffect(() => {
     let cancelled = false
