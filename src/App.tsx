@@ -38,19 +38,19 @@ function App() {
   return (
     <TokenGate>
       <div className="min-h-svh bg-[var(--bg)] text-[var(--text)]">
-        <header className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+        <header className="flex flex-wrap items-center justify-between gap-y-2 border-b border-[var(--border)] px-4 py-3">
           <h1 className="font-display flex items-center gap-2 text-lg font-bold">
             <Logo size={26} />
             Mon<span className="text-[var(--gold)]">Hub</span>
           </h1>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-3">
             <GlobalSearch onNavigate={(m) => setActive(m)} />
             {syncing ? (
-              <span className="text-xs text-[var(--text-faint)]">Synchronisation…</span>
+              <span className="text-xs whitespace-nowrap text-[var(--text-faint)]">Synchronisation…</span>
             ) : pending && syncError ? (
               <button
                 onClick={syncNow}
-                className="text-xs text-[var(--red)] hover:underline"
+                className="text-xs whitespace-nowrap text-[var(--red)] hover:underline"
                 title={syncError}
               >
                 ⚠ Échec de synchro — réessayer
@@ -58,13 +58,13 @@ function App() {
             ) : pending ? (
               <button
                 onClick={syncNow}
-                className="text-xs text-[var(--gold)] hover:underline"
+                className="text-xs whitespace-nowrap text-[var(--gold)] hover:underline"
                 title="Des modifications sont en attente d'envoi vers monhub-data"
               >
                 ● Non synchronisé — synchroniser
               </button>
             ) : (
-              <span className="text-xs text-[var(--text-faint)]">✓ Synchronisé</span>
+              <span className="text-xs whitespace-nowrap text-[var(--text-faint)]">✓ Synchronisé</span>
             )}
             <AiSettings />
             <button
@@ -72,7 +72,7 @@ function App() {
                 clearToken()
                 window.location.reload()
               }}
-              className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]"
+              className="text-xs whitespace-nowrap text-[var(--text-faint)] hover:text-[var(--text)]"
             >
               Déconnexion
             </button>
