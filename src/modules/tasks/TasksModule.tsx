@@ -5,15 +5,23 @@ import {
   fmtDueDate,
   isOverdue,
   sortedTasks,
+  toDateKey,
   PRIORITY_COLOR,
   PRIORITY_LABEL,
   type Priority,
   type Task,
 } from '../../lib/tasks'
 import { newChecklistItem } from '../../lib/checklist'
+import {
+  RECURRENCE_OPTIONS,
+  fmtRecurrence,
+  nextRecurrenceDate,
+  optionValueToRecurrence,
+  recurrenceToOptionValue,
+} from '../../lib/recurrence'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
 
-type Draft = { title: string; category: string; priority: Priority; dueDate: string; notes: string }
+type Draft = { title: string; category: string; priority: Priority; dueDate: string; notes: string; recurrence: string }
 
 const emptyDraft = (defaultCategory: string): Draft => ({
   title: '',
@@ -21,6 +29,7 @@ const emptyDraft = (defaultCategory: string): Draft => ({
   priority: 'normale',
   dueDate: '',
   notes: '',
+  recurrence: '',
 })
 
 export default function TasksModule() {
@@ -64,6 +73,7 @@ export default function TasksModule() {
       dueDate: draft.dueDate || undefined,
       done: false,
       notes: draft.notes.trim() || undefined,
+      recurrence: optionValueToRecurrence(draft.recurrence),
     }
     await save({ ...data, tasks: [...data.tasks, newTask] }, `Tâches: ajout de "${newTask.title}"`)
     setAddingOpen(false)
@@ -72,6 +82,14 @@ export default function TasksModule() {
 
   async function toggleDone(task: Task) {
     if (!data) return
+    if (!task.done && task.recurrence) {
+      // Tâche récurrente : on avance à la prochaine échéance plutôt que de la clore
+      // définitivement, pour ne pas avoir à la recréer à chaque fois.
+      const nextDue = nextRecurrenceDate(task.dueDate ?? toDateKey(new Date()), task.recurrence)
+      const nextTasks = data.tasks.map((t) => (t.id === task.id ? { ...t, dueDate: nextDue } : t))
+      await save({ ...data, tasks: nextTasks }, `Tâches: "${task.title}" reprogrammée au ${nextDue}`)
+      return
+    }
     const nextTasks = data.tasks.map((t) => (t.id === task.id ? { ...t, done: !t.done } : t))
     await save({ ...data, tasks: nextTasks }, `Tâches: "${task.title}" ${task.done ? 'rouverte' : 'terminée'}`)
   }
@@ -84,6 +102,7 @@ export default function TasksModule() {
       priority: t.priority,
       dueDate: t.dueDate ?? '',
       notes: t.notes ?? '',
+      recurrence: recurrenceToOptionValue(t.recurrence),
     })
     setFormError(null)
   }
@@ -104,6 +123,7 @@ export default function TasksModule() {
             priority: editDraft.priority,
             dueDate: editDraft.dueDate || undefined,
             notes: editDraft.notes.trim() || undefined,
+            recurrence: optionValueToRecurrence(editDraft.recurrence),
           }
         : t,
     )
@@ -179,8 +199,19 @@ export default function TasksModule() {
             value={editDraft.dueDate}
             onChange={(e) => setEditDraft({ ...editDraft, dueDate: e.target.value })}
             style={{ colorScheme: 'dark' }}
-            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
+            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
           />
+          <select
+            value={editDraft.recurrence}
+            onChange={(e) => setEditDraft({ ...editDraft, recurrence: e.target.value })}
+            className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+          >
+            {RECURRENCE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="mt-2 flex gap-2">
           <button
@@ -240,6 +271,7 @@ export default function TasksModule() {
                     {fmtDueDate(t.dueDate)}
                   </span>
                 )}
+                {t.recurrence && <span>🔁 {fmtRecurrence(t.recurrence)}</span>}
               </div>
             </div>
           </div>
@@ -364,8 +396,19 @@ export default function TasksModule() {
               value={draft.dueDate}
               onChange={(e) => setDraft({ ...draft, dueDate: e.target.value })}
               style={{ colorScheme: 'dark' }}
-              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
+              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)]"
             />
+            <select
+              value={draft.recurrence}
+              onChange={(e) => setDraft({ ...draft, recurrence: e.target.value })}
+              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)]"
+            >
+              {RECURRENCE_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="mt-3 flex gap-2">
             <button

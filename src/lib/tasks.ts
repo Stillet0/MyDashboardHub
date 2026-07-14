@@ -1,4 +1,5 @@
 import type { ChecklistItem } from './checklist'
+import type { Recurrence } from './recurrence'
 
 export type Priority = 'basse' | 'normale' | 'haute'
 
@@ -13,6 +14,7 @@ export type Task = {
   done: boolean
   notes?: string
   subtasks?: ChecklistItem[]
+  recurrence?: Recurrence
 }
 
 export type TasksData = {

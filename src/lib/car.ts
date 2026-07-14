@@ -8,6 +8,8 @@ export type Deadline = {
   dueMileage?: number // ex: vidange due à 65 000 km
   notes?: string
   done?: boolean // absent = pas fait (comportement historique, avant l'ajout de ce champ)
+  recurrenceMonths?: number // ex: vidange tous les 12 mois — reprogrammée automatiquement une fois faite
+  recurrenceKm?: number // ex: vidange tous les 10 000 km — reprogrammée automatiquement une fois faite
 }
 
 export type MaintenanceEntry = {
@@ -126,4 +128,61 @@ export function isMaintenanceDone(e: MaintenanceEntry): boolean {
 
 export function isDeadlineDone(d: Deadline): boolean {
   return d.done === true
+}
+
+/** Calcule la prochaine échéance (date et/ou kilométrage) d'une échéance récurrente une fois faite. */
+export function nextDeadlineOccurrence(d: Deadline, currentMileage: number): { dueDate?: string; dueMileage?: number } {
+  const next: { dueDate?: string; dueMileage?: number } = {}
+  if (d.recurrenceMonths) {
+    const base = parseDateKey(d.dueDate ?? toDateKey(new Date())) ?? new Date()
+    base.setMonth(base.getMonth() + d.recurrenceMonths)
+    next.dueDate = toDateKey(base)
+  }
+  if (d.recurrenceKm) {
+    next.dueMileage = (d.dueMileage ?? currentMileage) + d.recurrenceKm
+  }
+  return next
+}
+
+export function describeDeadlineRecurrence(d: Deadline): string | null {
+  const parts: string[] = []
+  if (d.recurrenceMonths) parts.push(d.recurrenceMonths === 1 ? 'chaque mois' : `tous les ${d.recurrenceMonths} mois`)
+  if (d.recurrenceKm) parts.push(`tous les ${fmtKm(d.recurrenceKm)}`)
+  if (parts.length === 0) return null
+  return '🔁 ' + parts.join(' ou ')
+}
+
+function daysBetween(a: string, b: string): number | null {
+  const da = parseDateKey(a)
+  const db = parseDateKey(b)
+  if (!da || !db) return null
+  return Math.round((db.getTime() - da.getTime()) / 86400000)
+}
+
+/**
+ * Estime la périodicité d'un type d'entretien (ex: "Vidange") à partir de l'historique du même
+ * véhicule — moyenne des écarts entre les enregistrements passés déjà faits — pour pré-remplir
+ * une échéance récurrente sans que l'utilisateur ait à connaître/deviner l'intervalle exact.
+ * Renvoie `null` s'il n'y a pas assez d'historique (moins de 2 entrées) pour estimer quoi que ce soit.
+ */
+export function estimateRecurrence(data: CarData, vehicleId: string, label: string): { months?: number; km?: number } | null {
+  const normalized = label.trim().toLowerCase()
+  if (!normalized) return null
+  const entries = data.maintenanceLog
+    .filter((e) => e.vehicleId === vehicleId && e.label.trim().toLowerCase() === normalized && isMaintenanceDone(e))
+    .sort((a, b) => a.date.localeCompare(b.date))
+  if (entries.length < 2) return null
+
+  const span = daysBetween(entries[0].date, entries[entries.length - 1].date)
+  const months = span !== null && span > 0 ? Math.max(1, Math.round(span / (entries.length - 1) / 30)) : undefined
+
+  const withMileage = entries.filter((e) => e.mileage !== undefined)
+  let km: number | undefined
+  if (withMileage.length >= 2) {
+    const kmSpan = withMileage[withMileage.length - 1].mileage! - withMileage[0].mileage!
+    km = kmSpan > 0 ? Math.round(kmSpan / (withMileage.length - 1) / 100) * 100 : undefined
+  }
+
+  if (!months && !km) return null
+  return { months, km }
 }

@@ -4,6 +4,8 @@ import {
   deadlinesForVehicle,
   describeDeadline,
   describeDeadlineDone,
+  describeDeadlineRecurrence,
+  estimateRecurrence,
   fmtDate,
   fmtEuro,
   fmtKm,
@@ -11,6 +13,7 @@ import {
   isDeadlineOverdue,
   isMaintenanceDone,
   logForVehicle,
+  nextDeadlineOccurrence,
   toDateKey,
   DEADLINE_PRESETS,
   type Deadline,
@@ -19,11 +22,25 @@ import {
 } from '../../lib/car'
 
 type VehicleDraft = { name: string; currentMileage: string }
-type DeadlineDraft = { label: string; dueDate: string; dueMileage: string; notes: string }
+type DeadlineDraft = {
+  label: string
+  dueDate: string
+  dueMileage: string
+  notes: string
+  recurrenceMonths: string
+  recurrenceKm: string
+}
 type LogDraft = { date: string; label: string; mileage: string; cost: string; notes: string; done: boolean }
 
 const emptyVehicleDraft = (): VehicleDraft => ({ name: '', currentMileage: '' })
-const emptyDeadlineDraft = (): DeadlineDraft => ({ label: DEADLINE_PRESETS[0], dueDate: '', dueMileage: '', notes: '' })
+const emptyDeadlineDraft = (): DeadlineDraft => ({
+  label: DEADLINE_PRESETS[0],
+  dueDate: '',
+  dueMileage: '',
+  notes: '',
+  recurrenceMonths: '',
+  recurrenceKm: '',
+})
 const emptyLogDraft = (): LogDraft => ({
   date: toDateKey(new Date()),
   label: '',
@@ -116,6 +133,18 @@ export default function CarModule() {
     if (selectedId === v.id) setSelectedId(null)
   }
 
+  function handleDeadlineLabelChange(label: string) {
+    // Si l'historique d'entretien connaît déjà ce type (ex: plusieurs "Vidange" passées), on
+    // pré-remplit la récurrence suggérée — l'utilisateur reste libre de l'ajuster ou l'effacer.
+    const estimate = data && selected ? estimateRecurrence(data, selected.id, label) : null
+    setDeadlineDraft({
+      ...deadlineDraft,
+      label,
+      recurrenceMonths: estimate?.months ? String(estimate.months) : deadlineDraft.recurrenceMonths,
+      recurrenceKm: estimate?.km ? String(estimate.km) : deadlineDraft.recurrenceKm,
+    })
+  }
+
   async function handleAddDeadline() {
     if (!data || !selected) return
     const mileage = deadlineDraft.dueMileage ? Number(deadlineDraft.dueMileage.replace(',', '.')) : undefined
@@ -131,6 +160,8 @@ export default function CarModule() {
       dueDate: deadlineDraft.dueDate || undefined,
       dueMileage: mileage,
       notes: deadlineDraft.notes.trim() || undefined,
+      recurrenceMonths: deadlineDraft.recurrenceMonths ? Number(deadlineDraft.recurrenceMonths) : undefined,
+      recurrenceKm: deadlineDraft.recurrenceKm ? Number(deadlineDraft.recurrenceKm.replace(',', '.')) : undefined,
     }
     await save(
       { ...data, deadlines: [...data.deadlines, newDeadline] },
@@ -140,6 +171,12 @@ export default function CarModule() {
     setAddingDeadline(false)
   }
 
+  async function handleDuplicateDeadline(d: Deadline) {
+    if (!data) return
+    const copy: Deadline = { ...d, id: 'dl_' + Math.random().toString(36).slice(2, 10), done: false }
+    await save({ ...data, deadlines: [...data.deadlines, copy] }, `Voiture: échéance "${d.label}" dupliquée`)
+  }
+
   function startEditDeadline(d: Deadline) {
     setEditingDeadlineId(d.id)
     setEditDeadlineDraft({
@@ -147,6 +184,8 @@ export default function CarModule() {
       dueDate: d.dueDate ?? '',
       dueMileage: d.dueMileage !== undefined ? String(d.dueMileage) : '',
       notes: d.notes ?? '',
+      recurrenceMonths: d.recurrenceMonths !== undefined ? String(d.recurrenceMonths) : '',
+      recurrenceKm: d.recurrenceKm !== undefined ? String(d.recurrenceKm) : '',
     })
     setFormError(null)
   }
@@ -167,6 +206,10 @@ export default function CarModule() {
             dueDate: editDeadlineDraft.dueDate || undefined,
             dueMileage: mileage,
             notes: editDeadlineDraft.notes.trim() || undefined,
+            recurrenceMonths: editDeadlineDraft.recurrenceMonths ? Number(editDeadlineDraft.recurrenceMonths) : undefined,
+            recurrenceKm: editDeadlineDraft.recurrenceKm
+              ? Number(editDeadlineDraft.recurrenceKm.replace(',', '.'))
+              : undefined,
           }
         : d,
     )
@@ -184,8 +227,29 @@ export default function CarModule() {
   }
 
   async function toggleDeadlineDone(d: Deadline) {
-    if (!data) return
+    if (!data || !selected) return
     const nowDone = !isDeadlineDone(d)
+    if (nowDone && (d.recurrenceMonths || d.recurrenceKm)) {
+      // Échéance récurrente : on la reprogramme directement à la prochaine occurrence plutôt
+      // que de la clore définitivement, et on garde une trace de ce passage dans le journal
+      // d'entretien — comme si l'entretien avait aussi été ajouté à la main.
+      const next = nextDeadlineOccurrence(d, selected.currentMileage)
+      const nextDeadlines = data.deadlines.map((x) => (x.id === d.id ? { ...x, ...next } : x))
+      const logEntry: MaintenanceEntry = {
+        id: 'log_' + Math.random().toString(36).slice(2, 10),
+        vehicleId: selected.id,
+        date: toDateKey(new Date()),
+        label: d.label,
+        mileage: selected.currentMileage,
+        notes: d.notes,
+        done: true,
+      }
+      await save(
+        { ...data, deadlines: nextDeadlines, maintenanceLog: [...data.maintenanceLog, logEntry] },
+        `Voiture: "${d.label}" faite, reprogrammée`,
+      )
+      return
+    }
     const nextDeadlines = data.deadlines.map((x) => (x.id === d.id ? { ...x, done: nowDone } : x))
     await save(
       { ...data, deadlines: nextDeadlines },
@@ -394,7 +458,7 @@ export default function CarModule() {
                     <div className="grid gap-2 sm:grid-cols-2">
                       <select
                         value={deadlineDraft.label}
-                        onChange={(e) => setDeadlineDraft({ ...deadlineDraft, label: e.target.value })}
+                        onChange={(e) => handleDeadlineLabelChange(e.target.value)}
                         className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                       >
                         {DEADLINE_PRESETS.map((p) => (
@@ -418,9 +482,24 @@ export default function CarModule() {
                         inputMode="decimal"
                         className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                       />
+                      <input
+                        value={deadlineDraft.recurrenceMonths}
+                        onChange={(e) => setDeadlineDraft({ ...deadlineDraft, recurrenceMonths: e.target.value })}
+                        placeholder="Se répète tous les (mois)"
+                        inputMode="numeric"
+                        className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                      />
+                      <input
+                        value={deadlineDraft.recurrenceKm}
+                        onChange={(e) => setDeadlineDraft({ ...deadlineDraft, recurrenceKm: e.target.value })}
+                        placeholder="Se répète tous les (km)"
+                        inputMode="decimal"
+                        className="rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                      />
                     </div>
                     <p className="mt-1.5 text-xs text-[var(--text-faint)]">
-                      Date, kilométrage, ou les deux — au moins un des deux est requis.
+                      Date, kilométrage, ou les deux — au moins un des deux est requis. La récurrence (optionnelle) est
+                      suggérée automatiquement si l'historique d'entretien connaît déjà ce type.
                     </p>
                     <div className="mt-2 flex gap-2">
                       <button
@@ -474,6 +553,24 @@ export default function CarModule() {
                               inputMode="decimal"
                               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
                             />
+                            <input
+                              value={editDeadlineDraft.recurrenceMonths}
+                              onChange={(e) =>
+                                setEditDeadlineDraft({ ...editDeadlineDraft, recurrenceMonths: e.target.value })
+                              }
+                              placeholder="Se répète tous les (mois)"
+                              inputMode="numeric"
+                              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                            />
+                            <input
+                              value={editDeadlineDraft.recurrenceKm}
+                              onChange={(e) =>
+                                setEditDeadlineDraft({ ...editDeadlineDraft, recurrenceKm: e.target.value })
+                              }
+                              placeholder="Se répète tous les (km)"
+                              inputMode="decimal"
+                              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                            />
                           </div>
                           <div className="mt-2 flex gap-2">
                             <button
@@ -519,9 +616,19 @@ export default function CarModule() {
                               {isDeadlineDone(d) && (
                                 <div className="text-xs text-[var(--text-faint)]">{describeDeadlineDone(d)}</div>
                               )}
+                              {describeDeadlineRecurrence(d) && (
+                                <div className="text-xs text-[var(--text-faint)]">{describeDeadlineRecurrence(d)}</div>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleDuplicateDeadline(d)}
+                              title="Dupliquer"
+                              className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--text)]"
+                            >
+                              ⧉
+                            </button>
                             <button
                               onClick={() => startEditDeadline(d)}
                               title="Modifier"
