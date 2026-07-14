@@ -1,4 +1,5 @@
 import type { ChecklistItem } from './checklist'
+import type { DocumentRef } from './documents'
 
 export type Trip = {
   id: string
@@ -69,4 +70,31 @@ export function fmtDateRange(start?: string, end?: string): string {
 
 export function fmtEuro(v: number): string {
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Math.round(v)) + ' €'
+}
+
+const TRAVEL_DOC_KEYWORDS = ['passeport', "carte d'identité", 'carte identite', 'cni', 'visa']
+
+function isTravelDocument(name: string): boolean {
+  const n = name.trim().toLowerCase()
+  return TRAVEL_DOC_KEYWORDS.some((k) => n.includes(k))
+}
+
+export type TripDocumentConflict = { trip: Trip; doc: DocumentRef }
+
+/**
+ * Repère les voyages à venir pour lesquels un document d'identité (passeport, carte d'identité,
+ * visa) sera déjà expiré — un rapprochement que rien d'autre ne fait puisque Documents et
+ * Voyages sont deux modules indépendants qui ne se consultent pas l'un l'autre.
+ */
+export function tripDocumentConflicts(travel: TravelData, documents: DocumentRef[]): TripDocumentConflict[] {
+  const upcomingTrips = travel.trips.filter((t) => !isPast(t) && t.startDate)
+  const travelDocs = documents.filter((d) => isTravelDocument(d.name) && d.expirationDate && !d.done)
+  const out: TripDocumentConflict[] = []
+  upcomingTrips.forEach((trip) => {
+    const tripEnd = trip.endDate ?? trip.startDate!
+    travelDocs.forEach((doc) => {
+      if (doc.expirationDate! <= tripEnd) out.push({ trip, doc })
+    })
+  })
+  return out
 }

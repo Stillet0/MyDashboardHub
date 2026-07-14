@@ -7,6 +7,27 @@ export type DocumentRef = {
   expirationDate?: string // 'YYYY-MM-DD'
   notes?: string
   done?: boolean // renouvelé/pris en charge — n'a de sens que si expirationDate est défini
+  renewalMonths?: number // ex: renouvelé tous les 12 mois — reprogrammé automatiquement une fois fait
+}
+
+export const RENEWAL_PRESETS = [
+  { label: 'Tous les ans', months: 12 },
+  { label: 'Tous les 2 ans', months: 24 },
+  { label: 'Tous les 5 ans', months: 60 },
+  { label: 'Tous les 10 ans', months: 120 },
+]
+
+/** Intervalle de renouvellement typique suggéré selon le nom du document (l'utilisateur reste libre de l'ajuster). */
+export function suggestRenewalMonths(name: string): number | undefined {
+  const n = name.trim().toLowerCase()
+  if (!n) return undefined
+  if (n.includes('enfant') && (n.includes('passeport') || n.includes('identité') || n.includes('identite'))) return 60
+  if (n.includes('passeport') || n.includes("carte d'identité") || n.includes('carte identite') || n.includes('cni'))
+    return 120
+  if (n.includes('permis de conduire') || n.includes('permis conduire')) return 180
+  if (n.includes('assurance') || n.includes('mutuelle')) return 12
+  if (n.includes('contrôle technique') || n.includes('controle technique')) return 24
+  return undefined
 }
 
 export function isDocumentDone(doc: DocumentRef): boolean {
@@ -73,4 +94,18 @@ export function sortedDocuments(documents: DocumentRef[]): DocumentRef[] {
     if (aExp !== bExp) return aExp.localeCompare(bExp)
     return a.name.localeCompare(b.name)
   })
+}
+
+/** Calcule la prochaine date d'expiration d'un document à renouvellement automatique une fois renouvelé. */
+export function nextExpirationDate(doc: DocumentRef): string | undefined {
+  if (!doc.renewalMonths) return undefined
+  const base = parseDateKey(doc.expirationDate ?? toDateKey(new Date())) ?? new Date()
+  base.setMonth(base.getMonth() + doc.renewalMonths)
+  return toDateKey(base)
+}
+
+export function describeRenewal(doc: DocumentRef): string | null {
+  if (!doc.renewalMonths) return null
+  const preset = RENEWAL_PRESETS.find((p) => p.months === doc.renewalMonths)
+  return '🔁 ' + (preset ? preset.label.toLowerCase() : `tous les ${doc.renewalMonths} mois`)
 }

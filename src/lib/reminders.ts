@@ -5,12 +5,13 @@ import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
 import type { HabitsData } from './habits'
 import type { HealthData } from './health'
+import { fmtDate as fmtTravelDate, tripDocumentConflicts, type TravelData } from './travel'
 
 export type Urgency = 'overdue' | 'today' | 'soon'
 
 export type Reminder = {
   id: string
-  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé'
+  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé' | 'Voyages'
   title: string
   detail?: string
   dueDate?: string
@@ -58,6 +59,15 @@ function mostUrgent(a: Urgency | null, b: Urgency | null): Urgency | null {
   return URGENCY_ORDER[a] <= URGENCY_ORDER[b] ? a : b
 }
 
+// Un passeport peut prendre des semaines à renouveler : contrairement aux autres échéances, ce
+// rappel doit rester visible bien avant le départ plutôt que seulement dans les derniers jours.
+function urgencyForTravelDocConflict(tripStartDate: string): Urgency {
+  const days = daysUntil(tripStartDate)
+  if (days < 0) return 'overdue'
+  if (days <= 14) return 'today'
+  return 'soon'
+}
+
 export function buildReminders(input: {
   tasks?: TasksData
   car?: CarData
@@ -67,6 +77,7 @@ export function buildReminders(input: {
   googleEvents?: AgendaEvent[]
   habits?: HabitsData
   health?: HealthData
+  travel?: TravelData
 }): Reminder[] {
   const out: Reminder[] = []
 
@@ -139,6 +150,19 @@ export function buildReminders(input: {
       urgency,
     })
   })
+
+  if (input.travel && input.documents) {
+    tripDocumentConflicts(input.travel, input.documents.documents).forEach(({ trip, doc }) => {
+      out.push({
+        id: 'travel_doc_' + trip.id + '_' + doc.id,
+        module: 'Voyages',
+        title: `${doc.name} expire avant "${trip.name}"`,
+        detail: `Expire le ${fmtTravelDate(doc.expirationDate!)} · départ ${fmtTravelDate(trip.startDate!)}`,
+        dueDate: trip.startDate,
+        urgency: urgencyForTravelDocConflict(trip.startDate!),
+      })
+    })
+  }
 
   input.goals?.goals.forEach((g) => {
     if (g.done || !g.targetDate) return

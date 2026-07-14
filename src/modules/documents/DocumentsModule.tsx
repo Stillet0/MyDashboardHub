@@ -3,21 +3,26 @@ import { useDocumentsData } from '../../lib/useDocumentsData'
 import {
   categoryColor,
   daysUntil,
+  describeRenewal,
   fmtDate,
   isDocumentDone,
   isExpired,
   isExpiringSoon,
+  nextExpirationDate,
   sortedDocuments,
+  suggestRenewalMonths,
+  RENEWAL_PRESETS,
   type DocumentRef,
 } from '../../lib/documents'
 
-type Draft = { name: string; category: string; expirationDate: string; notes: string }
+type Draft = { name: string; category: string; expirationDate: string; notes: string; renewalMonths: string }
 
 const emptyDraft = (defaultCategory: string): Draft => ({
   name: '',
   category: defaultCategory,
   expirationDate: '',
   notes: '',
+  renewalMonths: '',
 })
 
 export default function DocumentsModule() {
@@ -43,6 +48,15 @@ export default function DocumentsModule() {
     setAddingOpen(true)
   }
 
+  function handleDraftNameChange(name: string) {
+    // Suggère un intervalle de renouvellement typique selon le nom (passeport, CNI, assurance…),
+    // sans jamais écraser une valeur déjà choisie par l'utilisateur.
+    const suggestion = suggestRenewalMonths(name)
+    setDraft((d) =>
+      d ? { ...d, name, renewalMonths: !d.renewalMonths && suggestion ? String(suggestion) : d.renewalMonths } : d,
+    )
+  }
+
   async function handleAdd() {
     if (!data || !draft) return
     if (!draft.name.trim()) {
@@ -56,10 +70,17 @@ export default function DocumentsModule() {
       category: draft.category || undefined,
       expirationDate: draft.expirationDate || undefined,
       notes: draft.notes.trim() || undefined,
+      renewalMonths: draft.renewalMonths ? Number(draft.renewalMonths) : undefined,
     }
     await save({ ...data, documents: [...data.documents, newDoc] }, `Documents: ajout de "${newDoc.name}"`)
     setAddingOpen(false)
     setDraft(null)
+  }
+
+  async function handleDuplicate(d: DocumentRef) {
+    if (!data) return
+    const copy: DocumentRef = { ...d, id: 'doc_' + Math.random().toString(36).slice(2, 10), done: false }
+    await save({ ...data, documents: [...data.documents, copy] }, `Documents: "${d.name}" dupliqué`)
   }
 
   function startEdit(d: DocumentRef) {
@@ -69,6 +90,7 @@ export default function DocumentsModule() {
       category: d.category ?? '',
       expirationDate: d.expirationDate ?? '',
       notes: d.notes ?? '',
+      renewalMonths: d.renewalMonths !== undefined ? String(d.renewalMonths) : '',
     })
     setFormError(null)
   }
@@ -88,6 +110,7 @@ export default function DocumentsModule() {
             category: editDraft.category || undefined,
             expirationDate: editDraft.expirationDate || undefined,
             notes: editDraft.notes.trim() || undefined,
+            renewalMonths: editDraft.renewalMonths ? Number(editDraft.renewalMonths) : undefined,
           }
         : d,
     )
@@ -107,6 +130,14 @@ export default function DocumentsModule() {
   async function toggleDocDone(d: DocumentRef) {
     if (!data) return
     const nowDone = !isDocumentDone(d)
+    if (nowDone && d.renewalMonths) {
+      // Renouvellement automatique : on avance directement à la prochaine échéance plutôt que
+      // de clore définitivement, pour ne pas avoir à ressaisir la même date de renouvellement.
+      const next = nextExpirationDate(d)
+      const nextDocs = data.documents.map((x) => (x.id === d.id ? { ...x, expirationDate: next } : x))
+      await save({ ...data, documents: nextDocs }, `Documents: "${d.name}" renouvelé, prochaine échéance ${next}`)
+      return
+    }
     const nextDocs = data.documents.map((x) => (x.id === d.id ? { ...x, done: nowDone } : x))
     await save(
       { ...data, documents: nextDocs },
@@ -148,6 +179,36 @@ export default function DocumentsModule() {
             placeholder="Notes (optionnel)"
             className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
           />
+          <div className="sm:col-span-2">
+            <input
+              value={editDraft.renewalMonths}
+              onChange={(e) => setEditDraft({ ...editDraft, renewalMonths: e.target.value })}
+              placeholder="Renouvellement automatique tous les (mois, optionnel)"
+              inputMode="numeric"
+              className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+            />
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {RENEWAL_PRESETS.map((p) => (
+                <button
+                  key={p.months}
+                  type="button"
+                  onClick={() => setEditDraft({ ...editDraft, renewalMonths: String(p.months) })}
+                  className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                >
+                  {p.label}
+                </button>
+              ))}
+              {editDraft.renewalMonths && (
+                <button
+                  type="button"
+                  onClick={() => setEditDraft({ ...editDraft, renewalMonths: '' })}
+                  className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-faint)] hover:text-[var(--red)]"
+                >
+                  Aucun
+                </button>
+              )}
+            </div>
+          </div>
         </div>
         <div className="mt-2 flex gap-2">
           <button
@@ -216,10 +277,18 @@ export default function DocumentsModule() {
                 </span>
               )}
               {d.notes && <span className="text-[var(--text-faint)]">{d.notes}</span>}
+              {describeRenewal(d) && <span>{describeRenewal(d)}</span>}
             </div>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => handleDuplicate(d)}
+            title="Dupliquer"
+            className="rounded-md px-1.5 py-1 text-[var(--text-faint)] hover:text-[var(--text)]"
+          >
+            ⧉
+          </button>
           <button
             onClick={() => startEdit(d)}
             title="Modifier"
@@ -259,7 +328,7 @@ export default function DocumentsModule() {
           <div className="grid gap-3 sm:grid-cols-2">
             <input
               value={draft.name}
-              onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+              onChange={(e) => handleDraftNameChange(e.target.value)}
               placeholder="Nom (ex: Passeport)"
               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
             />
@@ -289,6 +358,36 @@ export default function DocumentsModule() {
               placeholder="Notes (optionnel)"
               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
             />
+            <div className="sm:col-span-2">
+              <input
+                value={draft.renewalMonths}
+                onChange={(e) => setDraft({ ...draft, renewalMonths: e.target.value })}
+                placeholder="Renouvellement automatique tous les (mois, optionnel)"
+                inputMode="numeric"
+                className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)]"
+              />
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {RENEWAL_PRESETS.map((p) => (
+                  <button
+                    key={p.months}
+                    type="button"
+                    onClick={() => setDraft({ ...draft, renewalMonths: String(p.months) })}
+                    className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                  >
+                    {p.label}
+                  </button>
+                ))}
+                {draft.renewalMonths && (
+                  <button
+                    type="button"
+                    onClick={() => setDraft({ ...draft, renewalMonths: '' })}
+                    className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-faint)] hover:text-[var(--red)]"
+                  >
+                    Aucun
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
           <div className="mt-3 flex gap-2">
             <button
