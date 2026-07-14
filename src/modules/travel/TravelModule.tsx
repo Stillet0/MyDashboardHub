@@ -2,15 +2,18 @@ import { useState } from 'react'
 import { useTravelData } from '../../lib/useTravelData'
 import {
   expensesForTrip,
+  fmtDate,
   fmtDateRange,
   fmtEuro,
   isPast,
   sortedTrips,
   totalSpent,
+  tripDocumentConflicts,
   type Expense,
   type Trip,
   type TravelData,
 } from '../../lib/travel'
+import { useDocumentsData } from '../../lib/useDocumentsData'
 import { newChecklistItem } from '../../lib/checklist'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
 
@@ -22,6 +25,7 @@ const emptyExpenseDraft = (): ExpenseDraft => ({ label: '', amount: '', date: ''
 
 export default function TravelModule() {
   const { data, loading, error, saving, save } = useTravelData()
+  const { data: documents } = useDocumentsData()
   const [addingTrip, setAddingTrip] = useState(false)
   const [tripDraft, setTripDraft] = useState<TripDraft>(emptyTripDraft())
   const [editingTripId, setEditingTripId] = useState<string | null>(null)
@@ -39,6 +43,7 @@ export default function TravelModule() {
   }
 
   const trips = sortedTrips(data.trips)
+  const docConflicts = documents ? tripDocumentConflicts(data, documents.documents) : []
 
   async function handleAddTrip() {
     if (!data) return
@@ -264,6 +269,15 @@ export default function TravelModule() {
             </button>
           </div>
         </div>
+
+        {docConflicts
+          .filter((c) => c.trip.id === t.id)
+          .map((c) => (
+            <div key={c.doc.id} className="mt-2 rounded-lg border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-3 py-2 text-xs text-[var(--red)]">
+              ⚠ {c.doc.name} expire le {fmtDate(c.doc.expirationDate!)}, avant la fin de ce voyage — pense à le
+              renouveler.
+            </div>
+          ))}
 
         {t.budget !== undefined && (
           <div className="mt-3 flex items-center gap-2">

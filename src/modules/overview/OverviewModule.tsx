@@ -18,7 +18,9 @@ import { isDoneThisPeriod } from '../../lib/habits'
 import { sortedTrips, isPast as isTripPast, fmtDateRange } from '../../lib/travel'
 import { sortedSnapshots, snapshotNetWorth, computeDelta, fmtMoney } from '../../lib/finances'
 import { useSyncManager } from '../../lib/useSyncManager'
+import { buildDataDigest } from '../../lib/dataDigest'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
+import AiAssistant from '../../components/AiAssistant'
 import QuickAdd from '../../components/QuickAdd'
 
 const RECHECK_INTERVAL = 30 * 60 * 1000
@@ -94,6 +96,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     googleEvents,
     habits: habits ?? undefined,
     health: health ?? undefined,
+    travel: travel ?? undefined,
   })
 
   useEffect(() => {
@@ -154,6 +157,18 @@ export default function OverviewModule({ onNavigate }: Props) {
           .join('\n')
       : 'Aucune échéance urgente pour le moment.'
 
+  const dataDigest = buildDataDigest({
+    tasks,
+    agenda,
+    habits,
+    car,
+    documents,
+    health,
+    goals,
+    travel,
+    finances,
+  })
+
   return (
     <div>
       {conflict ? (
@@ -201,6 +216,10 @@ export default function OverviewModule({ onNavigate }: Props) {
             mode="text"
           />
         </div>
+      </div>
+
+      <div className="mb-4">
+        <AiAssistant digest={dataDigest} />
       </div>
 
       <div className="mb-4">
