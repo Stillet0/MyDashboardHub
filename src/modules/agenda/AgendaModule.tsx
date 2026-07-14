@@ -131,8 +131,12 @@ export default function AgendaModule({ onNavigate }: Props) {
   })
   const overdueItems = allExternalItems
     .filter((e) => e.overdue)
-    .sort((a, b) => a.date.localeCompare(b.date))
-  const externalItems = allExternalItems.filter((e) => !e.overdue)
+    .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''))
+  // Toujours daté : seule une échéance voiture au kilométrage peut ne pas avoir de date, et elle
+  // n'est jamais poussée tant qu'elle n'est pas en retard (donc toujours filtrée ci-dessus).
+  const externalItems = allExternalItems.filter((e) => !e.overdue) as Array<
+    Omit<(typeof allExternalItems)[number], 'date'> & { date: string }
+  >
 
   const localUpcoming = upcomingEvents(data).map((e) => ({ ...e, source: 'local' as const, module: undefined }))
   const merged = [
@@ -244,7 +248,7 @@ export default function AgendaModule({ onNavigate }: Props) {
                     </span>
                   </div>
                   <div className="text-xs text-[var(--red)]">
-                    {[fmtEventDate(e.date), e.detail].filter(Boolean).join(' · ')}
+                    {[e.date ? fmtEventDate(e.date) : null, e.detail].filter(Boolean).join(' · ')}
                   </div>
                 </div>
               </button>
