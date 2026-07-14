@@ -1,5 +1,5 @@
 import type { TasksData } from './tasks'
-import { isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
+import { deadlineKmRemaining, fmtKm, isDeadlineDone, isMaintenanceDone, type CarData, type Vehicle } from './car'
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { HealthData } from './health'
@@ -10,7 +10,10 @@ export type ExternalAgendaModule = 'Tâches' | 'Voiture' | 'Documents' | 'Santé
 export type ExternalAgendaItem = {
   id: string
   title: string
-  date: string // 'YYYY-MM-DD'
+  // Absent uniquement pour une échéance voiture au kilométrage (pas de date à placer sur un
+  // calendrier) déjà dépassée : elle n'a de sens que dans la section "En retard", jamais dans
+  // les groupes par date.
+  date?: string // 'YYYY-MM-DD'
   time?: string
   detail?: string
   module: ExternalAgendaModule
@@ -42,17 +45,31 @@ export function buildExternalAgendaItems(input: {
   if (input.car) {
     const vehicleName = (id: string): string | undefined =>
       input.car!.vehicles.find((v: Vehicle) => v.id === id)?.name
+    const vehicleMileage = (id: string): number => input.car!.vehicles.find((v: Vehicle) => v.id === id)?.currentMileage ?? 0
     input.car.deadlines.forEach((d) => {
-      // Une échéance uniquement au kilométrage n'a pas de date à placer sur le calendrier ;
-      // elle reste visible dans le module Voiture et les rappels de l'Aperçu.
-      if (isDeadlineDone(d) || !d.dueDate) return
+      if (isDeadlineDone(d)) return
+      if (d.dueDate) {
+        out.push({
+          id: 'car_' + d.id,
+          title: d.label,
+          date: d.dueDate,
+          detail: vehicleName(d.vehicleId),
+          module: 'Voiture',
+          overdue: d.dueDate < todayKey,
+        })
+        return
+      }
+      // Une échéance uniquement au kilométrage n'a pas de date à placer sur le calendrier —
+      // mais si elle est déjà dépassée, elle a sa place dans la section "En retard" au même
+      // titre qu'une échéance datée en retard, plutôt que de rester invisible dans l'Agenda.
+      const kmRemaining = deadlineKmRemaining(d, vehicleMileage(d.vehicleId))
+      if (kmRemaining === null || kmRemaining > 0) return
       out.push({
         id: 'car_' + d.id,
         title: d.label,
-        date: d.dueDate,
-        detail: vehicleName(d.vehicleId),
+        detail: [vehicleName(d.vehicleId), `${fmtKm(Math.abs(kmRemaining))} dépassés`].filter(Boolean).join(' · '),
         module: 'Voiture',
-        overdue: d.dueDate < todayKey,
+        overdue: true,
       })
     })
     input.car.maintenanceLog.forEach((e) => {
