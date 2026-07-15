@@ -7,6 +7,7 @@ import type { HealthData } from './health'
 import type { GoalsData } from './goals'
 import type { TravelData } from './travel'
 import type { FinancesData } from './finances'
+import type { NotesData } from './notes'
 import { fmtMoney, sortedSnapshots, snapshotNetWorth } from './finances'
 
 const MAX_ITEMS = 25
@@ -30,6 +31,7 @@ export function buildDataDigest(input: {
   goals?: GoalsData | null
   travel?: TravelData | null
   finances?: FinancesData | null
+  notes?: NotesData | null
 }): string {
   const todayKey = new Date().toISOString().slice(0, 10)
   const sections: string[] = [`Date d'aujourd'hui : ${todayKey}`]
@@ -122,6 +124,17 @@ export function buildDataDigest(input: {
         bullets(
           input.travel.trips.map(
             (t) => `- ${t.name}${t.destination ? ` à ${t.destination}` : ''}${t.startDate ? `, du ${t.startDate}${t.endDate ? ` au ${t.endDate}` : ''}` : ''}`,
+          ),
+        ),
+    )
+  }
+
+  if (input.notes) {
+    sections.push(
+      '## Notes\n' +
+        bullets(
+          input.notes.notes.map(
+            (n) => `- ${n.title} [${n.space}]${n.tags?.length ? ` #${n.tags.join(' #')}` : ''} : ${n.body.slice(0, 160)}`,
           ),
         ),
     )

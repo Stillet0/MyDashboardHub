@@ -12,6 +12,7 @@ import DocumentsModule from './modules/documents/DocumentsModule'
 import HealthModule from './modules/health/HealthModule'
 import GoalsModule from './modules/goals/GoalsModule'
 import TravelModule from './modules/travel/TravelModule'
+import NotesModule from './modules/notes/NotesModule'
 import OverviewModule from './modules/overview/OverviewModule'
 import AiSettings from './components/AiSettings'
 import GlobalSearch from './components/GlobalSearch'
@@ -28,6 +29,7 @@ const MODULES = [
   'Santé',
   'Objectifs',
   'Voyages',
+  'Notes',
 ] as const
 
 type ModuleName = (typeof MODULES)[number]
@@ -126,6 +128,8 @@ function App() {
               <GoalsModule />
             ) : active === 'Voyages' ? (
               <TravelModule />
+            ) : active === 'Notes' ? (
+              <NotesModule />
             ) : (
               <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
                 Module « {active} » à venir.
