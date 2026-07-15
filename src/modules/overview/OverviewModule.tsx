@@ -8,6 +8,8 @@ import { useHabitsData } from '../../lib/useHabitsData'
 import { useFinancesData } from '../../lib/useFinancesData'
 import { useTravelData } from '../../lib/useTravelData'
 import { useHealthData } from '../../lib/useHealthData'
+import { useNotesData } from '../../lib/useNotesData'
+import { sortedNotes } from '../../lib/notes'
 import { fetchUpcomingGoogleEvents, isConnected as isGoogleConnected } from '../../lib/googleCalendar'
 import { buildReminders, type Reminder, type Urgency } from '../../lib/reminders'
 import { getPermission, isNotificationSupported, notifyNewReminders, requestPermission } from '../../lib/notifications'
@@ -47,6 +49,7 @@ type ModuleLink =
   | 'Santé'
   | 'Objectifs'
   | 'Voyages'
+  | 'Notes'
 type Props = { onNavigate: (module: ModuleLink) => void }
 
 function Tile({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -71,6 +74,7 @@ export default function OverviewModule({ onNavigate }: Props) {
   const { data: finances } = useFinancesData()
   const { data: travel } = useTravelData()
   const { data: health, save: saveHealth } = useHealthData()
+  const { data: notes } = useNotesData()
   const { error: syncError, syncNow, conflict, resolveConflictKeepLocal, resolveConflictDiscardLocal } =
     useSyncManager()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
@@ -150,6 +154,9 @@ export default function OverviewModule({ onNavigate }: Props) {
   // Voyages : prochain voyage à venir
   const nextTrip = travel ? sortedTrips(travel.trips).find((t) => !isTripPast(t)) : undefined
 
+  // Notes : note la plus récente (épinglée en priorité)
+  const latestNote = notes ? sortedNotes(notes.notes)[0] : undefined
+
   const remindersContext =
     reminders.length > 0
       ? reminders
@@ -167,6 +174,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     goals,
     travel,
     finances,
+    notes,
   })
 
   return (
@@ -358,6 +366,21 @@ export default function OverviewModule({ onNavigate }: Props) {
             </>
           ) : (
             <div className="text-sm text-[var(--text-muted)]">Aucun voyage prévu</div>
+          )}
+        </Tile>
+
+        <Tile label="Notes" onClick={() => onNavigate('Notes')}>
+          {latestNote ? (
+            <>
+              <div className="text-sm font-medium">{latestNote.title}</div>
+              <div className="truncate text-xs text-[var(--text-muted)]">
+                {[latestNote.space, `${notes?.notes.length ?? 0} note${(notes?.notes.length ?? 0) > 1 ? 's' : ''}`]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-[var(--text-muted)]">Aucune note</div>
           )}
         </Tile>
       </div>

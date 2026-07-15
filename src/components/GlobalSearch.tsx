@@ -7,6 +7,7 @@ import { useDocumentsData } from '../lib/useDocumentsData'
 import { useHealthData } from '../lib/useHealthData'
 import { useGoalsData } from '../lib/useGoalsData'
 import { useTravelData } from '../lib/useTravelData'
+import { useNotesData } from '../lib/useNotesData'
 import { buildSearchIndex, searchItems, type SearchModule } from '../lib/searchIndex'
 
 export default function GlobalSearch({ onNavigate }: { onNavigate: (module: SearchModule) => void }) {
@@ -18,6 +19,7 @@ export default function GlobalSearch({ onNavigate }: { onNavigate: (module: Sear
   const { data: health } = useHealthData()
   const { data: goals } = useGoalsData()
   const { data: travel } = useTravelData()
+  const { data: notes } = useNotesData()
 
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -31,6 +33,7 @@ export default function GlobalSearch({ onNavigate }: { onNavigate: (module: Sear
     health: health ?? undefined,
     goals: goals ?? undefined,
     travel: travel ?? undefined,
+    notes: notes ?? undefined,
   })
   const results = searchItems(index, query)
 

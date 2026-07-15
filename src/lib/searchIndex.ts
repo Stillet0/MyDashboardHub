@@ -6,8 +6,18 @@ import type { DocumentsData } from './documents'
 import type { HealthData } from './health'
 import type { GoalsData } from './goals'
 import type { TravelData } from './travel'
+import type { NotesData } from './notes'
 
-export type SearchModule = 'Tâches' | 'Agenda' | 'Habitudes' | 'Voiture' | 'Documents' | 'Santé' | 'Objectifs' | 'Voyages'
+export type SearchModule =
+  | 'Tâches'
+  | 'Agenda'
+  | 'Habitudes'
+  | 'Voiture'
+  | 'Documents'
+  | 'Santé'
+  | 'Objectifs'
+  | 'Voyages'
+  | 'Notes'
 
 export type SearchItem = { id: string; title: string; detail?: string; module: SearchModule }
 
@@ -20,6 +30,7 @@ export function buildSearchIndex(input: {
   health?: HealthData
   goals?: GoalsData
   travel?: TravelData
+  notes?: NotesData
 }): SearchItem[] {
   const out: SearchItem[] = []
 
@@ -44,6 +55,14 @@ export function buildSearchIndex(input: {
 
   input.goals?.goals.forEach((g) => out.push({ id: 'goal_' + g.id, title: g.title, module: 'Objectifs' }))
   input.travel?.trips.forEach((tr) => out.push({ id: 'trip_' + tr.id, title: tr.name, detail: tr.destination, module: 'Voyages' }))
+  input.notes?.notes.forEach((n) =>
+    out.push({
+      id: 'note_' + n.id,
+      title: n.title,
+      detail: [n.space, ...(n.tags ?? []), n.body].join(' '),
+      module: 'Notes',
+    }),
+  )
 
   return out
 }
