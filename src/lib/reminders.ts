@@ -3,7 +3,7 @@ import { deadlineKmRemaining, fmtKm, isDeadlineDone, isMaintenanceDone, type Car
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { AgendaData, AgendaEvent } from './agenda'
-import type { HabitsData } from './habits'
+import { brokenStreak, currentStreak, isDoneThisPeriod, type HabitsData } from './habits'
 import type { HealthData } from './health'
 import { fmtDate as fmtTravelDate, tripDocumentConflicts, type TravelData } from './travel'
 import { nextBirthday, ageTurning, type ContactsData } from './contacts'
@@ -304,12 +304,21 @@ export function buildReminders(input: {
   })
 
   input.habits?.habits.forEach((h) => {
-    if (h.frequency !== 'quotidien') return
-    const doneToday = h.doneDates.includes(todayKey)
-    if (doneToday) return
-    // A running streak of 2+ days is worth protecting with a reminder.
-    const yesterday = toDateKey(new Date(Date.now() - 86400000))
-    if (!h.doneDates.includes(yesterday)) return
+    const broken = brokenStreak(h)
+    if (broken) {
+      out.push({
+        id: 'habit_broken_' + h.id,
+        module: 'Habitudes',
+        title: h.name,
+        detail: `⚠ Série de ${broken.length} ${h.frequency === 'hebdo' ? 'semaines' : 'jours'} rompue`,
+        urgency: 'today',
+      })
+      return
+    }
+    if (isDoneThisPeriod(h)) return
+    // Une série en cours (même pas encore faite pour la période actuelle) vaut la peine
+    // d'être protégée par un rappel, quelle que soit la fréquence.
+    if (currentStreak(h) < 1) return
     out.push({
       id: 'habit_' + h.id,
       module: 'Habitudes',
