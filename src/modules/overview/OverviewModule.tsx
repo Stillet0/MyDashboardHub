@@ -10,8 +10,10 @@ import { useTravelData } from '../../lib/useTravelData'
 import { useHealthData } from '../../lib/useHealthData'
 import { useNotesData } from '../../lib/useNotesData'
 import { sortedNotes } from '../../lib/notes'
+import { useContactsData } from '../../lib/useContactsData'
+import { nextBirthday, ageTurning, daysUntil as daysUntilContact } from '../../lib/contacts'
 import { fetchUpcomingGoogleEvents, isConnected as isGoogleConnected } from '../../lib/googleCalendar'
-import { buildReminders, type Reminder, type Urgency } from '../../lib/reminders'
+import { buildReminders, daysUntil, type Reminder, type Urgency } from '../../lib/reminders'
 import { getPermission, isNotificationSupported, notifyNewReminders, requestPermission } from '../../lib/notifications'
 import { upcomingEvents, fmtEventDate, type AgendaEvent } from '../../lib/agenda'
 import { sortedTasks, isOverdue as isTaskOverdue } from '../../lib/tasks'
@@ -50,6 +52,7 @@ type ModuleLink =
   | 'Objectifs'
   | 'Voyages'
   | 'Notes'
+  | 'Contacts'
 type Props = { onNavigate: (module: ModuleLink) => void }
 
 function Tile({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
@@ -75,6 +78,7 @@ export default function OverviewModule({ onNavigate }: Props) {
   const { data: travel } = useTravelData()
   const { data: health, save: saveHealth } = useHealthData()
   const { data: notes } = useNotesData()
+  const { data: contacts } = useContactsData()
   const { error: syncError, syncNow, conflict, resolveConflictKeepLocal, resolveConflictDiscardLocal } =
     useSyncManager()
   const [googleEvents, setGoogleEvents] = useState<AgendaEvent[]>([])
@@ -101,6 +105,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     habits: habits ?? undefined,
     health: health ?? undefined,
     travel: travel ?? undefined,
+    contacts: contacts ?? undefined,
   })
 
   useEffect(() => {
@@ -157,6 +162,20 @@ export default function OverviewModule({ onNavigate }: Props) {
   // Notes : note la plus récente (épinglée en priorité)
   const latestNote = notes ? sortedNotes(notes.notes)[0] : undefined
 
+  // Contacts : prochain anniversaire à venir
+  const upcomingBirthdays = (contacts?.contacts ?? [])
+    .filter((c) => c.birthday)
+    .map((c) => {
+      const next = nextBirthday(c.birthday!)!
+      return { contact: c, next, days: daysUntilContact(next), age: ageTurning(c.birthday!, next) }
+    })
+    .filter((b) => b.days <= 7)
+    .sort((a, b) => a.days - b.days)
+  const nextBirthdayEntry = upcomingBirthdays[0]
+
+  // Bilan hebdomadaire : tâches à traiter dans les 7 prochains jours (échéance dépassée incluse)
+  const tasksThisWeekCount = openTasks.filter((t) => t.dueDate && daysUntil(t.dueDate) <= 7).length
+
   const remindersContext =
     reminders.length > 0
       ? reminders
@@ -175,6 +194,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     travel,
     finances,
     notes,
+    contacts,
   })
 
   return (
@@ -383,6 +403,73 @@ export default function OverviewModule({ onNavigate }: Props) {
             <div className="text-sm text-[var(--text-muted)]">Aucune note</div>
           )}
         </Tile>
+
+        <Tile label="Contacts" onClick={() => onNavigate('Contacts')}>
+          {nextBirthdayEntry ? (
+            <>
+              <div className="text-sm font-medium">🎂 {nextBirthdayEntry.contact.name}</div>
+              <div className="truncate text-xs text-[var(--text-muted)]">
+                {nextBirthdayEntry.days === 0 ? "aujourd'hui" : `dans ${nextBirthdayEntry.days} j`}
+                {nextBirthdayEntry.age ? ` · ${nextBirthdayEntry.age} ans` : ''}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-[var(--text-muted)]">Aucun anniversaire proche</div>
+          )}
+        </Tile>
+      </div>
+
+      <div className="mb-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-6">
+        <div className="mb-3 text-sm font-medium text-[var(--text-muted)]">Cette semaine</div>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div>
+            <div className="font-display text-lg font-semibold">{tasksThisWeekCount}</div>
+            <div className="text-xs text-[var(--text-muted)]">tâche{tasksThisWeekCount > 1 ? 's' : ''} à traiter</div>
+          </div>
+          <div>
+            <div className="font-display text-lg font-semibold">
+              {habitsDoneCount}/{habitsList.length}
+            </div>
+            <div className="text-xs text-[var(--text-muted)]">habitudes aujourd'hui</div>
+          </div>
+          <div>
+            <div className="font-display text-lg font-semibold">{reminders.length}</div>
+            <div className="text-xs text-[var(--text-muted)]">échéance{reminders.length > 1 ? 's' : ''} à suivre</div>
+          </div>
+          <div>
+            <div
+              className={`font-display text-lg font-semibold ${
+                netWorthDelta && netWorthDelta.diff !== null
+                  ? netWorthDelta.diff >= 0
+                    ? 'text-[var(--emerald)]'
+                    : 'text-[var(--red)]'
+                  : ''
+              }`}
+            >
+              {netWorthDelta && netWorthDelta.diff !== null
+                ? `${netWorthDelta.diff >= 0 ? '+' : ''}${fmtMoney(netWorthDelta.diff)}`
+                : '—'}
+            </div>
+            <div className="text-xs text-[var(--text-muted)]">patrimoine (dernier relevé)</div>
+          </div>
+        </div>
+        {upcomingBirthdays.length > 0 && (
+          <div className="mt-4 space-y-1.5 border-t border-[var(--border)] pt-3">
+            {upcomingBirthdays.map(({ contact, days, age }) => (
+              <button
+                key={contact.id}
+                onClick={() => onNavigate('Contacts')}
+                className="flex w-full items-center justify-between gap-2 text-left text-xs"
+              >
+                <span className="text-[var(--text-muted)]">
+                  🎂 {contact.name} {days === 0 ? "aujourd'hui" : `dans ${days} j`}
+                  {age ? ` (${age} ans)` : ''}
+                </span>
+                <span className="text-[var(--gold)]">🎁 pense à un cadeau</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {isNotificationSupported() && permission === 'default' && (
@@ -432,6 +519,7 @@ export default function OverviewModule({ onNavigate }: Props) {
                         <div className="text-xs text-[var(--text-muted)]">
                           {[r.module, r.detail].filter(Boolean).join(' · ')}
                         </div>
+                        {r.tip && <div className="mt-0.5 text-xs text-[var(--gold)]">{r.tip}</div>}
                       </div>
                     </button>
                   ))}

@@ -6,6 +6,7 @@ import { useDocumentsData } from './useDocumentsData'
 import { useHealthData } from './useHealthData'
 import { useGoalsData } from './useGoalsData'
 import { useTravelData } from './useTravelData'
+import { useContactsData } from './useContactsData'
 import { buildSearchIndex, type SearchItem } from './searchIndex'
 
 /** Catalogue de tous les éléments des autres modules, pour rattacher une note à l'un d'eux. */
@@ -18,6 +19,7 @@ export function useCrossModuleIndex(): SearchItem[] {
   const { data: health } = useHealthData()
   const { data: goals } = useGoalsData()
   const { data: travel } = useTravelData()
+  const { data: contacts } = useContactsData()
 
   return buildSearchIndex({
     tasks: tasks ?? undefined,
@@ -28,5 +30,6 @@ export function useCrossModuleIndex(): SearchItem[] {
     health: health ?? undefined,
     goals: goals ?? undefined,
     travel: travel ?? undefined,
+    contacts: contacts ?? undefined,
   })
 }

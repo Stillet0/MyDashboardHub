@@ -7,6 +7,7 @@ import type { HealthData } from './health'
 import type { GoalsData } from './goals'
 import type { TravelData } from './travel'
 import type { NotesData, NoteRefModule } from './notes'
+import type { ContactsData } from './contacts'
 
 export type SearchModule = NoteRefModule | 'Notes'
 
@@ -22,6 +23,7 @@ export function buildSearchIndex(input: {
   goals?: GoalsData
   travel?: TravelData
   notes?: NotesData
+  contacts?: ContactsData
 }): SearchItem[] {
   const out: SearchItem[] = []
 
@@ -51,6 +53,9 @@ export function buildSearchIndex(input: {
   }
 
   input.goals?.goals.forEach((g) => out.push({ id: 'goal_' + g.id, rawId: g.id, title: g.title, module: 'Objectifs' }))
+  input.contacts?.contacts.forEach((c) =>
+    out.push({ id: 'contact_' + c.id, rawId: c.id, title: c.name, detail: c.relationship, module: 'Contacts' }),
+  )
   input.travel?.trips.forEach((tr) =>
     out.push({ id: 'trip_' + tr.id, rawId: tr.id, title: tr.name, detail: tr.destination, module: 'Voyages' }),
   )

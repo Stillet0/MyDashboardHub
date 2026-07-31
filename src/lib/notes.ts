@@ -10,6 +10,7 @@ export type NoteRefModule =
   | 'Santé'
   | 'Objectifs'
   | 'Voyages'
+  | 'Contacts'
 
 export type NoteRef = { module: NoteRefModule; id: string }
 
