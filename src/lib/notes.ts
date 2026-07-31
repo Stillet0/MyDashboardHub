@@ -1,5 +1,19 @@
 export type NoteSpace = 'Pro' | 'Perso'
 
+/** Modules d'autres onglets vers lesquels une note peut être explicitement rattachée. */
+export type NoteRefModule =
+  | 'Tâches'
+  | 'Agenda'
+  | 'Habitudes'
+  | 'Voiture'
+  | 'Documents'
+  | 'Santé'
+  | 'Objectifs'
+  | 'Voyages'
+  | 'Contacts'
+
+export type NoteRef = { module: NoteRefModule; id: string }
+
 export type Note = {
   id: string
   title: string
@@ -7,12 +21,18 @@ export type Note = {
   space: NoteSpace
   tags?: string[]
   links?: string[] // liens manuels explicites vers d'autres notes, en plus des [[wiki-links]] détectés dans le corps
+  refs?: NoteRef[] // liens vers des éléments d'autres modules (tâche, voyage, objectif...)
   createdAt: string // 'YYYY-MM-DD'
   updatedAt: string // 'YYYY-MM-DD'
   pinned?: boolean
 }
 
 export type NotesData = { notes: Note[] }
+
+/** Notes explicitement rattachées à un élément donné d'un autre module (sens inverse d'une ref). */
+export function notesLinkedTo(notes: Note[], module: NoteRefModule, id: string): Note[] {
+  return notes.filter((n) => (n.refs ?? []).some((r) => r.module === module && r.id === id))
+}
 
 export function toDateKey(d: Date): string {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')

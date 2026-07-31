@@ -8,6 +8,8 @@ import type { GoalsData } from './goals'
 import type { TravelData } from './travel'
 import type { FinancesData } from './finances'
 import type { NotesData } from './notes'
+import type { ContactsData } from './contacts'
+import { nextBirthday, ageTurning } from './contacts'
 import { fmtMoney, sortedSnapshots, snapshotNetWorth } from './finances'
 
 const MAX_ITEMS = 25
@@ -32,6 +34,7 @@ export function buildDataDigest(input: {
   travel?: TravelData | null
   finances?: FinancesData | null
   notes?: NotesData | null
+  contacts?: ContactsData | null
 }): string {
   const todayKey = new Date().toISOString().slice(0, 10)
   const sections: string[] = [`Date d'aujourd'hui : ${todayKey}`]
@@ -136,6 +139,19 @@ export function buildDataDigest(input: {
           input.notes.notes.map(
             (n) => `- ${n.title} [${n.space}]${n.tags?.length ? ` #${n.tags.join(' #')}` : ''} : ${n.body.slice(0, 160)}`,
           ),
+        ),
+    )
+  }
+
+  if (input.contacts) {
+    sections.push(
+      '## Contacts\n' +
+        bullets(
+          input.contacts.contacts.map((c) => {
+            const next = c.birthday ? nextBirthday(c.birthday) : null
+            const age = next && c.birthday ? ageTurning(c.birthday, next) : null
+            return `- ${c.name}${c.relationship ? ` [${c.relationship}]` : ''}${next ? `, prochain anniversaire le ${next}${age ? ` (${age} ans)` : ''}` : ''}${c.giftIdeas ? ` — idées cadeaux : ${c.giftIdeas}` : ''}`
+          }),
         ),
     )
   }

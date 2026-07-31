@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useDocumentsData } from '../../lib/useDocumentsData'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
   categoryColor,
   daysUntil,
@@ -25,8 +27,11 @@ const emptyDraft = (defaultCategory: string): Draft => ({
   renewalMonths: '',
 })
 
-export default function DocumentsModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function DocumentsModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useDocumentsData()
+  const { data: notes } = useNotesData()
   const [addingOpen, setAddingOpen] = useState(false)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -278,6 +283,7 @@ export default function DocumentsModule() {
               )}
               {d.notes && <span className="text-[var(--text-faint)]">{d.notes}</span>}
               {describeRenewal(d) && <span>{describeRenewal(d)}</span>}
+              <LinkedNotesBadge notes={notes?.notes} module="Documents" itemId={d.id} onNavigate={onNavigate} />
             </div>
           </div>
         </div>

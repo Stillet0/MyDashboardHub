@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useTasksData } from '../../lib/useTasksData'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
   categoryColor,
   fmtDueDate,
@@ -32,8 +34,11 @@ const emptyDraft = (defaultCategory: string): Draft => ({
   recurrence: '',
 })
 
-export default function TasksModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function TasksModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useTasksData()
+  const { data: notes } = useNotesData()
   const [addingOpen, setAddingOpen] = useState(false)
   const [draft, setDraft] = useState<Draft | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -272,6 +277,7 @@ export default function TasksModule() {
                   </span>
                 )}
                 {t.recurrence && <span>🔁 {fmtRecurrence(t.recurrence)}</span>}
+                <LinkedNotesBadge notes={notes?.notes} module="Tâches" itemId={t.id} onNavigate={onNavigate} />
               </div>
             </div>
           </div>

@@ -6,16 +6,42 @@ import type { AgendaData, AgendaEvent } from './agenda'
 import type { HabitsData } from './habits'
 import type { HealthData } from './health'
 import { fmtDate as fmtTravelDate, tripDocumentConflicts, type TravelData } from './travel'
+import { nextBirthday, ageTurning, type ContactsData } from './contacts'
 
 export type Urgency = 'overdue' | 'today' | 'soon'
 
 export type Reminder = {
   id: string
-  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé' | 'Voyages'
+  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé' | 'Voyages' | 'Contacts'
   title: string
   detail?: string
   dueDate?: string
   urgency: Urgency
+  tip?: string
+}
+
+/**
+ * Petit conseil actionnable associé à un rappel, en plus de la simple date — déduit du type
+ * d'échéance par mots-clés (contrôle technique, pièce d'identité, anniversaire...). Purement
+ * local, aucune IA : c'est un coup de pouce systématique, pas une suggestion à valider.
+ */
+function reminderTip(module: Reminder['module'], title: string): string | undefined {
+  const t = title.toLowerCase()
+  if (module === 'Contacts') return '🎁 Pense à un cadeau'
+  if (module === 'Voiture') {
+    if (t.includes('contrôle technique') || t.includes('controle technique')) {
+      return '📅 Pense à prendre rendez-vous chez le contrôleur'
+    }
+    if (t.includes('vidange') || t.includes('pneu')) return '🔧 Pense à réserver un créneau garage'
+    if (t.includes('assurance')) return '💶 Compare les offres avant de renouveler'
+  }
+  if (module === 'Documents') {
+    if (/passeport|carte d'identité|carte d identite|\bcni\b|pièce d'identité|piece d identite/.test(t)) {
+      return '🪪 Pense à prendre rendez-vous en mairie (délais possibles)'
+    }
+    if (t.includes('assurance') || t.includes('mutuelle')) return '💶 Compare les offres avant de renouveler'
+  }
+  return undefined
 }
 
 const SOON_WINDOW_DAYS = 7
@@ -78,6 +104,7 @@ export function buildReminders(input: {
   habits?: HabitsData
   health?: HealthData
   travel?: TravelData
+  contacts?: ContactsData
 }): Reminder[] {
   const out: Reminder[] = []
 
@@ -120,6 +147,7 @@ export function buildReminders(input: {
         detail: detail || undefined,
         dueDate: d.dueDate,
         urgency,
+        tip: reminderTip('Voiture', d.label),
       })
     })
     input.car.maintenanceLog.forEach((e) => {
@@ -148,6 +176,25 @@ export function buildReminders(input: {
       detail: doc.category,
       dueDate: doc.expirationDate,
       urgency,
+      tip: reminderTip('Documents', doc.name),
+    })
+  })
+
+  input.contacts?.contacts.forEach((c) => {
+    if (!c.birthday) return
+    const next = nextBirthday(c.birthday)
+    if (!next) return
+    const urgency = urgencyForDate(next)
+    if (!urgency) return
+    const age = ageTurning(c.birthday, next)
+    out.push({
+      id: 'contact_' + c.id,
+      module: 'Contacts',
+      title: c.name,
+      detail: [c.relationship, age ? `${age} ans` : undefined].filter(Boolean).join(' · ') || undefined,
+      dueDate: next,
+      urgency,
+      tip: reminderTip('Contacts', c.name),
     })
   })
 

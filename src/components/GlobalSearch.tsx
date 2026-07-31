@@ -8,6 +8,7 @@ import { useHealthData } from '../lib/useHealthData'
 import { useGoalsData } from '../lib/useGoalsData'
 import { useTravelData } from '../lib/useTravelData'
 import { useNotesData } from '../lib/useNotesData'
+import { useContactsData } from '../lib/useContactsData'
 import { buildSearchIndex, searchItems, type SearchModule } from '../lib/searchIndex'
 
 export default function GlobalSearch({ onNavigate }: { onNavigate: (module: SearchModule) => void }) {
@@ -20,6 +21,7 @@ export default function GlobalSearch({ onNavigate }: { onNavigate: (module: Sear
   const { data: goals } = useGoalsData()
   const { data: travel } = useTravelData()
   const { data: notes } = useNotesData()
+  const { data: contacts } = useContactsData()
 
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
@@ -34,6 +36,7 @@ export default function GlobalSearch({ onNavigate }: { onNavigate: (module: Sear
     goals: goals ?? undefined,
     travel: travel ?? undefined,
     notes: notes ?? undefined,
+    contacts: contacts ?? undefined,
   })
   const results = searchItems(index, query)
 

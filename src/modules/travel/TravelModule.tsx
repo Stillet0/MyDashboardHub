@@ -14,8 +14,10 @@ import {
   type TravelData,
 } from '../../lib/travel'
 import { useDocumentsData } from '../../lib/useDocumentsData'
+import { useNotesData } from '../../lib/useNotesData'
 import { newChecklistItem } from '../../lib/checklist'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 
 type TripDraft = { name: string; destination: string; startDate: string; endDate: string; budget: string }
 type ExpenseDraft = { label: string; amount: string; date: string }
@@ -23,9 +25,12 @@ type ExpenseDraft = { label: string; amount: string; date: string }
 const emptyTripDraft = (): TripDraft => ({ name: '', destination: '', startDate: '', endDate: '', budget: '' })
 const emptyExpenseDraft = (): ExpenseDraft => ({ label: '', amount: '', date: '' })
 
-export default function TravelModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function TravelModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useTravelData()
   const { data: documents } = useDocumentsData()
+  const { data: notes } = useNotesData()
   const [addingTrip, setAddingTrip] = useState(false)
   const [tripDraft, setTripDraft] = useState<TripDraft>(emptyTripDraft())
   const [editingTripId, setEditingTripId] = useState<string | null>(null)
@@ -248,8 +253,9 @@ export default function TravelModule() {
                 </span>
               )}
             </div>
-            <div className="mt-0.5 text-xs text-[var(--text-muted)]">
-              {[t.destination, fmtDateRange(t.startDate, t.endDate)].filter(Boolean).join(' · ')}
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[var(--text-muted)]">
+              <span>{[t.destination, fmtDateRange(t.startDate, t.endDate)].filter(Boolean).join(' · ')}</span>
+              <LinkedNotesBadge notes={notes?.notes} module="Voyages" itemId={t.id} onNavigate={onNavigate} />
             </div>
           </div>
           <div className="flex items-center gap-2">
