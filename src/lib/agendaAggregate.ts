@@ -3,9 +3,10 @@ import { deadlineKmRemaining, fmtKm, isDeadlineDone, isMaintenanceDone, type Car
 import type { DocumentsData } from './documents'
 import type { GoalsData } from './goals'
 import type { HealthData } from './health'
+import type { NotesData } from './notes'
 import { toDateKey } from './agenda'
 
-export type ExternalAgendaModule = 'Tâches' | 'Voiture' | 'Documents' | 'Santé' | 'Objectifs'
+export type ExternalAgendaModule = 'Tâches' | 'Voiture' | 'Documents' | 'Santé' | 'Objectifs' | 'Notes'
 
 export type ExternalAgendaItem = {
   id: string
@@ -33,6 +34,7 @@ export function buildExternalAgendaItems(input: {
   documents?: DocumentsData
   goals?: GoalsData
   health?: HealthData
+  notes?: NotesData
 }): ExternalAgendaItem[] {
   const todayKey = toDateKey(new Date())
   const out: ExternalAgendaItem[] = []
@@ -130,6 +132,18 @@ export function buildExternalAgendaItems(input: {
       detail: t.dosage,
       module: 'Santé',
       overdue: t.renewalDate < todayKey,
+    })
+  })
+
+  input.notes?.notes.forEach((n) => {
+    if (!n.reminderDate) return
+    out.push({
+      id: 'note_' + n.id,
+      title: n.title,
+      date: n.reminderDate,
+      detail: n.space,
+      module: 'Notes',
+      overdue: n.reminderDate < todayKey,
     })
   })
 

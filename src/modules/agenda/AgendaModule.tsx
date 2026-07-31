@@ -43,7 +43,7 @@ function periodLabel(view: ViewMode, anchorDate: Date): string {
   return `${SHORT_DAY_FMT.format(start)} – ${SHORT_DAY_FMT.format(end)}`
 }
 
-type Props = { onNavigate?: (module: ExternalAgendaModule | 'Notes') => void }
+type Props = { onNavigate?: (module: ExternalAgendaModule) => void }
 
 export default function AgendaModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useAgendaData()
@@ -164,6 +164,7 @@ export default function AgendaModule({ onNavigate }: Props) {
     documents: documents ?? undefined,
     goals: goals ?? undefined,
     health: health ?? undefined,
+    notes: notes ?? undefined,
   })
   const overdueItems = allExternalItems
     .filter((e) => e.overdue)

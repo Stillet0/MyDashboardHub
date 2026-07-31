@@ -7,12 +7,23 @@ import type { HabitsData } from './habits'
 import type { HealthData } from './health'
 import { fmtDate as fmtTravelDate, tripDocumentConflicts, type TravelData } from './travel'
 import { nextBirthday, ageTurning, type ContactsData } from './contacts'
+import type { NotesData } from './notes'
 
 export type Urgency = 'overdue' | 'today' | 'soon'
 
 export type Reminder = {
   id: string
-  module: 'Tâches' | 'Voiture' | 'Documents' | 'Objectifs' | 'Agenda' | 'Habitudes' | 'Santé' | 'Voyages' | 'Contacts'
+  module:
+    | 'Tâches'
+    | 'Voiture'
+    | 'Documents'
+    | 'Objectifs'
+    | 'Agenda'
+    | 'Habitudes'
+    | 'Santé'
+    | 'Voyages'
+    | 'Contacts'
+    | 'Notes'
   title: string
   detail?: string
   dueDate?: string
@@ -105,6 +116,7 @@ export function buildReminders(input: {
   health?: HealthData
   travel?: TravelData
   contacts?: ContactsData
+  notes?: NotesData
 }): Reminder[] {
   const out: Reminder[] = []
 
@@ -273,6 +285,20 @@ export function buildReminders(input: {
       title: `Renouveler : ${t.name}`,
       detail: t.dosage,
       dueDate: t.renewalDate,
+      urgency,
+    })
+  })
+
+  input.notes?.notes.forEach((n) => {
+    if (!n.reminderDate) return
+    const urgency = urgencyForDate(n.reminderDate)
+    if (!urgency) return
+    out.push({
+      id: 'note_' + n.id,
+      module: 'Notes',
+      title: n.title,
+      detail: n.space,
+      dueDate: n.reminderDate,
       urgency,
     })
   })

@@ -106,6 +106,7 @@ export default function OverviewModule({ onNavigate }: Props) {
     health: health ?? undefined,
     travel: travel ?? undefined,
     contacts: contacts ?? undefined,
+    notes: notes ?? undefined,
   })
 
   useEffect(() => {

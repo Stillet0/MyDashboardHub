@@ -21,9 +21,9 @@ import ConstellationView from './ConstellationView'
 type ViewMode = 'liste' | 'constellation'
 type SpaceFilter = 'Tous' | NoteSpace
 
-type Draft = { title: string; space: NoteSpace; tags: string; body: string }
+type Draft = { title: string; space: NoteSpace; tags: string; body: string; reminderDate: string }
 
-const emptyDraft = (space: NoteSpace = 'Perso'): Draft => ({ title: '', space, tags: '', body: '' })
+const emptyDraft = (space: NoteSpace = 'Perso'): Draft => ({ title: '', space, tags: '', body: '', reminderDate: '' })
 
 const parseTags = (raw: string): string[] =>
   [...new Set(raw.split(',').map((t) => t.trim()).filter(Boolean))]
@@ -83,6 +83,7 @@ export default function NotesModule({ onNavigate }: Props) {
       body: draft.body,
       space: draft.space,
       tags: parseTags(draft.tags),
+      reminderDate: draft.reminderDate || undefined,
       createdAt: today,
       updatedAt: today,
     }
@@ -93,7 +94,13 @@ export default function NotesModule({ onNavigate }: Props) {
 
   function startEdit(n: Note) {
     setEditingId(n.id)
-    setEditDraft({ title: n.title, space: n.space, tags: (n.tags ?? []).join(', '), body: n.body })
+    setEditDraft({
+      title: n.title,
+      space: n.space,
+      tags: (n.tags ?? []).join(', '),
+      body: n.body,
+      reminderDate: n.reminderDate ?? '',
+    })
     setFormError(null)
   }
 
@@ -112,6 +119,7 @@ export default function NotesModule({ onNavigate }: Props) {
             space: editDraft.space,
             tags: parseTags(editDraft.tags),
             body: editDraft.body,
+            reminderDate: editDraft.reminderDate || undefined,
             updatedAt: toDateKey(new Date()),
           }
         : n,
@@ -217,6 +225,27 @@ export default function NotesModule({ onNavigate }: Props) {
             rows={5}
             className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
           />
+          <div className="sm:col-span-2">
+            <label className="mb-1 block text-xs text-[var(--text-faint)]">
+              Me rappeler cette note le (optionnel)
+            </label>
+            <input
+              type="date"
+              value={d.reminderDate}
+              onChange={(e) => setD({ ...d, reminderDate: e.target.value })}
+              style={{ colorScheme: 'dark' }}
+              className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)]"
+            />
+            {d.reminderDate && (
+              <button
+                type="button"
+                onClick={() => setD({ ...d, reminderDate: '' })}
+                className="ml-2 rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-faint)] hover:text-[var(--red)]"
+              >
+                Retirer
+              </button>
+            )}
+          </div>
         </div>
         <div className="mt-3 flex gap-2">
           <button
@@ -285,6 +314,13 @@ export default function NotesModule({ onNavigate }: Props) {
                     </button>
                   )
                 })}
+              </div>
+            )}
+            {n.reminderDate && (
+              <div
+                className={`mt-1.5 text-xs ${n.reminderDate <= toDateKey(new Date()) ? 'text-[var(--red)]' : 'text-[var(--gold)]'}`}
+              >
+                🔔 Rappel le {fmtDate(n.reminderDate)}
               </div>
             )}
             <div className="mt-2 text-[10px] text-[var(--text-faint)]">

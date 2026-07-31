@@ -22,6 +22,7 @@ export type Note = {
   tags?: string[]
   links?: string[] // liens manuels explicites vers d'autres notes, en plus des [[wiki-links]] détectés dans le corps
   refs?: NoteRef[] // liens vers des éléments d'autres modules (tâche, voyage, objectif...)
+  reminderDate?: string // 'YYYY-MM-DD' — pour faire remonter la note dans les rappels/l'Agenda à une date donnée
   createdAt: string // 'YYYY-MM-DD'
   updatedAt: string // 'YYYY-MM-DD'
   pinned?: boolean
