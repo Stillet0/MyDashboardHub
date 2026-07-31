@@ -11,6 +11,8 @@ import { useHealthData } from '../../lib/useHealthData'
 import { buildExternalAgendaItems, type ExternalAgendaModule } from '../../lib/agendaAggregate'
 import { addDays, addMonths, type CalendarView as ViewMode } from '../../lib/calendarLayout'
 import CalendarView, { type CalendarEventItem } from './CalendarView'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 
 type Draft = { title: string; date: string; time: string; location: string; notes: string }
 
@@ -41,11 +43,12 @@ function periodLabel(view: ViewMode, anchorDate: Date): string {
   return `${SHORT_DAY_FMT.format(start)} – ${SHORT_DAY_FMT.format(end)}`
 }
 
-type Props = { onNavigate?: (module: ExternalAgendaModule) => void }
+type Props = { onNavigate?: (module: ExternalAgendaModule | 'Notes') => void }
 
 export default function AgendaModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useAgendaData()
   const { data: tasks } = useTasksData()
+  const { data: notes } = useNotesData()
   const { data: car } = useCarData()
   const { data: documents } = useDocumentsData()
   const { data: goals } = useGoalsData()
@@ -351,6 +354,9 @@ export default function AgendaModule({ onNavigate }: Props) {
               placeholder="Lieu"
               className="rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)] sm:col-span-2"
             />
+          </div>
+          <div className="mt-2">
+            <LinkedNotesBadge notes={notes?.notes} module="Agenda" itemId={editingId} onNavigate={onNavigate} />
           </div>
           <div className="mt-3 flex gap-2">
             <button

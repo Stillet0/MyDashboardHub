@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useGoalsData } from '../../lib/useGoalsData'
+import { useNotesData } from '../../lib/useNotesData'
 import { fmtDate, isOverdue, sortedGoals, LINKED_MODULES, type Goal, type LinkedModule } from '../../lib/goals'
 import { newChecklistItem } from '../../lib/checklist'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 
 type Draft = {
   title: string
@@ -20,8 +22,11 @@ const emptyDraft = (): Draft => ({
   progress: '0',
 })
 
-export default function GoalsModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function GoalsModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useGoalsData()
+  const { data: notes } = useNotesData()
   const [addingOpen, setAddingOpen] = useState(false)
   const [draft, setDraft] = useState<Draft>(emptyDraft())
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -241,6 +246,7 @@ export default function GoalsModule() {
                     {fmtDate(g.targetDate)}
                   </span>
                 )}
+                <LinkedNotesBadge notes={notes?.notes} module="Objectifs" itemId={g.id} onNavigate={onNavigate} />
               </div>
             </div>
           </div>

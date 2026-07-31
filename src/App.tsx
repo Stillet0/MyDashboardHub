@@ -115,21 +115,21 @@ function App() {
             ) : active === 'Agenda' ? (
               <AgendaModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Tâches' ? (
-              <TasksModule />
+              <TasksModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Habitudes' ? (
-              <HabitsModule />
+              <HabitsModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Voiture' ? (
-              <CarModule />
+              <CarModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Documents' ? (
-              <DocumentsModule />
+              <DocumentsModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Santé' ? (
-              <HealthModule />
+              <HealthModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Objectifs' ? (
-              <GoalsModule />
+              <GoalsModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Voyages' ? (
-              <TravelModule />
+              <TravelModule onNavigate={(m) => setActive(m)} />
             ) : active === 'Notes' ? (
-              <NotesModule />
+              <NotesModule onNavigate={(m) => setActive(m)} />
             ) : (
               <div className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-8 text-center text-[var(--text-muted)]">
                 Module « {active} » à venir.

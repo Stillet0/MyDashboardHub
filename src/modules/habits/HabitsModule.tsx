@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useHabitsData } from '../../lib/useHabitsData'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
   currentStreak,
   isDoneOn,
@@ -16,8 +18,11 @@ type Draft = { name: string; frequency: Frequency; color: string }
 
 const emptyDraft = (): Draft => ({ name: '', frequency: 'quotidien', color: HABIT_COLORS[0] })
 
-export default function HabitsModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function HabitsModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useHabitsData()
+  const { data: notes } = useNotesData()
   const [addingOpen, setAddingOpen] = useState(false)
   const [draft, setDraft] = useState<Draft>(emptyDraft())
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -221,6 +226,9 @@ export default function HabitsModule() {
                           🔥 {streak} {h.frequency === 'quotidien' ? 'jours' : 'semaines'}
                         </span>
                       )}
+                      <span className="ml-2">
+                        <LinkedNotesBadge notes={notes?.notes} module="Habitudes" itemId={h.id} onNavigate={onNavigate} />
+                      </span>
                     </div>
                   </div>
                 </div>

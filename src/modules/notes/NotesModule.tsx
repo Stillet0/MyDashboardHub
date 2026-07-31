@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNotesData } from '../../lib/useNotesData'
+import { useCrossModuleIndex } from '../../lib/useCrossModuleIndex'
+import type { SearchItem, SearchModule } from '../../lib/searchIndex'
 import {
   buildNoteEdges,
   edgesForNote,
@@ -8,6 +10,8 @@ import {
   sortedNotes,
   toDateKey,
   type Note,
+  type NoteRef,
+  type NoteRefModule,
   type NoteSpace,
 } from '../../lib/notes'
 import { useAi } from '../../lib/useAi'
@@ -24,8 +28,12 @@ const emptyDraft = (space: NoteSpace = 'Perso'): Draft => ({ title: '', space, t
 const parseTags = (raw: string): string[] =>
   [...new Set(raw.split(',').map((t) => t.trim()).filter(Boolean))]
 
-export default function NotesModule() {
+type Props = { onNavigate: (module: SearchModule) => void }
+
+export default function NotesModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useNotesData()
+  const crossIndex = useCrossModuleIndex()
+  const [refQuery, setRefQuery] = useState('')
   const [view, setView] = useState<ViewMode>('liste')
   const [spaceFilter, setSpaceFilter] = useState<SpaceFilter>('Tous')
   const [search, setSearch] = useState('')
@@ -150,6 +158,34 @@ export default function NotesModule() {
     setAiSuggestions((s) => (s ? s.filter((id) => id !== suggestedId) : s))
   }
 
+  function resolveRef(ref: NoteRef): SearchItem | undefined {
+    return crossIndex.find((i) => i.module === ref.module && i.rawId === ref.id)
+  }
+
+  async function addRef(noteId: string, item: SearchItem) {
+    if (!data) return
+    const note = data.notes.find((x) => x.id === noteId)
+    if (!note) return
+    const exists = (note.refs ?? []).some((r) => r.module === item.module && r.id === item.rawId)
+    if (exists) return
+    const nextRefs: NoteRef[] = [...(note.refs ?? []), { module: item.module as NoteRefModule, id: item.rawId }]
+    const nextNotes = data.notes.map((x) => (x.id === noteId ? { ...x, refs: nextRefs } : x))
+    await save({ notes: nextNotes }, `Notes: lien vers ${item.module} ajouté sur "${note.title}"`)
+    setRefQuery('')
+  }
+
+  async function removeRef(noteId: string, ref: NoteRef) {
+    if (!data) return
+    const note = data.notes.find((x) => x.id === noteId)
+    if (!note) return
+    const nextNotes = data.notes.map((x) =>
+      x.id === noteId
+        ? { ...x, refs: (x.refs ?? []).filter((r) => !(r.module === ref.module && r.id === ref.id)) }
+        : x,
+    )
+    await save({ notes: nextNotes }, `Notes: lien retiré sur "${note.title}"`)
+  }
+
   function renderForm(d: Draft, setD: (d: Draft) => void, onSave: () => void, onCancel: () => void) {
     return (
       <div className="mb-4 rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5">
@@ -234,6 +270,23 @@ export default function NotesModule() {
               </div>
             )}
             {n.body && <p className="mt-2 whitespace-pre-wrap text-xs text-[var(--text-muted)]">{n.body.slice(0, 220)}{n.body.length > 220 ? '…' : ''}</p>}
+            {(n.refs ?? []).length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {(n.refs ?? []).map((r) => {
+                  const item = resolveRef(r)
+                  return (
+                    <button
+                      key={r.module + '_' + r.id}
+                      onClick={() => onNavigate(r.module)}
+                      title={r.module}
+                      className="rounded-full border border-[var(--border)] px-2 py-0.5 text-[10px] text-[var(--text-muted)] hover:text-[var(--text)]"
+                    >
+                      {item ? item.title : '(supprimé)'} <span className="opacity-60">· {r.module}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
             <div className="mt-2 text-[10px] text-[var(--text-faint)]">
               Modifiée le {fmtDate(n.updatedAt)}
               {related > 0 ? ` · 🔗 ${related} note${related > 1 ? 's' : ''} liée${related > 1 ? 's' : ''}` : ''}
@@ -378,6 +431,64 @@ export default function NotesModule() {
                   </div>
                 </div>
               )}
+
+              <div className="mt-3">
+                <div className="mb-1.5 text-xs font-medium text-[var(--text-muted)]">Éléments liés</div>
+                {(selected.refs ?? []).length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-1.5">
+                    {(selected.refs ?? []).map((r) => {
+                      const item = resolveRef(r)
+                      return (
+                        <span
+                          key={r.module + '_' + r.id}
+                          className="flex items-center gap-1.5 rounded-full border border-[var(--border)] py-1 pr-1 pl-2.5 text-xs text-[var(--text-muted)]"
+                        >
+                          <button onClick={() => onNavigate(r.module)} className="hover:text-[var(--text)]">
+                            {item ? item.title : '(supprimé)'} <span className="opacity-60">· {r.module}</span>
+                          </button>
+                          <button
+                            onClick={() => removeRef(selected.id, r)}
+                            title="Retirer le lien"
+                            className="rounded-full px-1 text-[var(--text-faint)] hover:text-[var(--red)]"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
+                <input
+                  value={refQuery}
+                  onChange={(e) => setRefQuery(e.target.value)}
+                  placeholder="Lier à une tâche, un voyage, un objectif…"
+                  className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs outline-none focus:border-[var(--gold)]"
+                />
+                {refQuery.trim() && (
+                  <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto">
+                    {crossIndex
+                      .filter(
+                        (i) =>
+                          !(selected.refs ?? []).some((r) => r.module === i.module && r.id === i.rawId) &&
+                          (i.title.toLowerCase().includes(refQuery.trim().toLowerCase()) ||
+                            i.detail?.toLowerCase().includes(refQuery.trim().toLowerCase())),
+                      )
+                      .slice(0, 8)
+                      .map((item) => (
+                        <button
+                          key={item.module + '_' + item.rawId}
+                          onClick={() => addRef(selected.id, item)}
+                          className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs hover:bg-[var(--surface-2)]"
+                        >
+                          <span className="truncate">{item.title}</span>
+                          <span className="shrink-0 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] text-[var(--text-faint)]">
+                            {item.module}
+                          </span>
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
 
               {hasKey && (
                 <div className="mt-3">

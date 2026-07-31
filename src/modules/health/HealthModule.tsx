@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useHealthData } from '../../lib/useHealthData'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
   daysUntil,
   fmtDate,
@@ -18,8 +20,11 @@ type TreatmentDraft = { name: string; dosage: string; ongoing: boolean; renewalD
 const emptyApptDraft = (): ApptDraft => ({ title: '', practitioner: '', date: '', time: '', notes: '' })
 const emptyTreatmentDraft = (): TreatmentDraft => ({ name: '', dosage: '', ongoing: true, renewalDate: '', notes: '' })
 
-export default function HealthModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function HealthModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useHealthData()
+  const { data: notes } = useNotesData()
   const [addingAppt, setAddingAppt] = useState(false)
   const [apptDraft, setApptDraft] = useState<ApptDraft>(emptyApptDraft())
   const [editingApptId, setEditingApptId] = useState<string | null>(null)
@@ -266,6 +271,7 @@ export default function HealthModule() {
                 {a.time ? ` à ${a.time}` : ''}
               </span>
               {a.notes && <span className="text-[var(--text-faint)]">{a.notes}</span>}
+              <LinkedNotesBadge notes={notes?.notes} module="Santé" itemId={a.id} onNavigate={onNavigate} />
             </div>
           </div>
         </div>
@@ -371,6 +377,7 @@ export default function HealthModule() {
               </span>
             )}
             {t.notes && <span className="text-[var(--text-faint)]">{t.notes}</span>}
+            <LinkedNotesBadge notes={notes?.notes} module="Santé" itemId={t.id} onNavigate={onNavigate} />
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">

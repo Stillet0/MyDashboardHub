@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useCarData } from '../../lib/useCarData'
+import { useNotesData } from '../../lib/useNotesData'
+import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
   deadlinesForVehicle,
   describeDeadline,
@@ -50,8 +52,11 @@ const emptyLogDraft = (): LogDraft => ({
   done: true,
 })
 
-export default function CarModule() {
+type Props = { onNavigate?: (module: 'Notes') => void }
+
+export default function CarModule({ onNavigate }: Props) {
   const { data, loading, error, saving, save } = useCarData()
+  const { data: notes } = useNotesData()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [addingVehicle, setAddingVehicle] = useState(false)
   const [vehicleDraft, setVehicleDraft] = useState<VehicleDraft>(emptyVehicleDraft())
@@ -420,6 +425,9 @@ export default function CarModule() {
                       <div className="font-display text-xl font-bold">{selected.name}</div>
                       <div className="text-sm text-[var(--text-muted)]">
                         {fmtKm(selected.currentMileage)}
+                        <span className="ml-2">
+                          <LinkedNotesBadge notes={notes?.notes} module="Voiture" itemId={selected.id} onNavigate={onNavigate} />
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -619,6 +627,7 @@ export default function CarModule() {
                               {describeDeadlineRecurrence(d) && (
                                 <div className="text-xs text-[var(--text-faint)]">{describeDeadlineRecurrence(d)}</div>
                               )}
+                              <LinkedNotesBadge notes={notes?.notes} module="Voiture" itemId={d.id} onNavigate={onNavigate} />
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -755,6 +764,7 @@ export default function CarModule() {
                                 {fmtDate(e.date)}
                                 {e.mileage !== undefined ? ` · ${fmtKm(e.mileage)}` : ''}
                               </div>
+                              <LinkedNotesBadge notes={notes?.notes} module="Voiture" itemId={e.id} onNavigate={onNavigate} />
                             </div>
                           </div>
                           <div className="flex items-center gap-3">
