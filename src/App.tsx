@@ -17,6 +17,8 @@ import ContactsModule from './modules/contacts/ContactsModule'
 import OverviewModule from './modules/overview/OverviewModule'
 import AiSettings from './components/AiSettings'
 import GlobalSearch from './components/GlobalSearch'
+import NavBadgeDot from './components/NavBadgeDot'
+import { useNavBadges, type NavBadge } from './lib/useNavBadges'
 import { useSyncManager } from './lib/useSyncManager'
 
 const MODULES = [
@@ -39,6 +41,7 @@ type ModuleName = (typeof MODULES)[number]
 function App() {
   const [active, setActive] = useState<ModuleName>('Aperçu')
   const { pending, syncing, error: syncError, conflict, syncNow } = useSyncManager()
+  const badges = useNavBadges() as Partial<Record<ModuleName, NavBadge>>
 
   return (
     <TokenGate>
@@ -97,13 +100,14 @@ function App() {
             <button
               key={label}
               onClick={() => setActive(label)}
-              className={`font-display rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`font-display relative rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
                 active === label
                   ? 'bg-[var(--surface-2)] text-[var(--text)]'
                   : 'text-[var(--text-muted)] hover:text-[var(--text)]'
               }`}
             >
               {label}
+              <NavBadgeDot badge={badges[label]} />
             </button>
           ))}
         </nav>

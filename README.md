@@ -92,9 +92,15 @@ La clé reste uniquement dans le navigateur (`localStorage`), comme le token Git
 
 ## Aperçu
 
-L'onglet "Aperçu" (ancien "Aujourd'hui") sert de page d'accueil : une grille de tuiles résume chaque module (Finances, Agenda, Tâches, Santé, Objectifs, Habitudes, Voiture, Documents, Voyages, Notes, Contacts) — clique sur une tuile pour aller directement au module concerné.
+L'onglet "Aperçu" (ancien "Aujourd'hui") sert de page d'accueil, organisée en trois sous-onglets (comme le module Finances) pour ne pas surcharger une seule page :
 
-En dessous, les rappels regroupent tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules. Clique sur un rappel pour aller directement au module concerné.
+- **Résumé** — une grille de tuiles résume chaque module (Finances, Agenda, Tâches, Santé, Objectifs, Habitudes, Voiture, Documents, Voyages, Notes, Contacts) et la carte "Cette semaine" (bilan hebdomadaire) — clique sur une tuile pour aller directement au module concerné.
+- **Rappels** — tout ce qui est **en retard**, **du jour** ou **dans les 7 prochains jours** à travers tous les modules, plus le bouton d'activation des notifications. Clique sur un rappel pour aller directement au module concerné.
+- **Assistant** — Plan de la journée, assistant conversationnel et ajout rapide en langage naturel (fonctionnalités IA, voir plus bas).
+
+Le sous-onglet "Rappels" affiche lui-même une pastille avec le nombre total de rappels (rouge s'il y en a au moins un en retard, orange sinon).
+
+**Pastilles de navigation** : la barre de menus principale affiche aussi une petite pastille sur chaque module ayant des échéances en cours (nombre d'éléments à traiter), en rouge si l'une d'elles est en retard, en orange sinon — un coup d'œil suffit pour savoir où il y a quelque chose à faire, sans avoir à ouvrir l'Aperçu.
 
 Si tu actives les notifications (bouton dans l'onglet), MonHub déclenche une vraie notification navigateur/OS pour chaque élément en retard ou du jour, à l'ouverture de l'app puis toutes les 30 minutes tant qu'elle reste ouverte.
 
