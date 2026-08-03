@@ -3,20 +3,27 @@ import { useHabitsData } from '../../lib/useHabitsData'
 import { useNotesData } from '../../lib/useNotesData'
 import LinkedNotesBadge from '../../components/LinkedNotesBadge'
 import {
+  brokenStreak,
   currentStreak,
+  fmtFrequency,
   isDoneOn,
   isDoneThisPeriod,
   lastDays,
   todayKey,
   HABIT_COLORS,
+  INTERVAL_PRESETS,
   type Frequency,
   type Habit,
 } from '../../lib/habits'
 import AiSuggestPanel from '../../components/AiSuggestPanel'
 
-type Draft = { name: string; frequency: Frequency; color: string }
+type Draft = { name: string; frequency: Frequency; intervalDays: string; color: string }
 
-const emptyDraft = (): Draft => ({ name: '', frequency: 'quotidien', color: HABIT_COLORS[0] })
+const emptyDraft = (): Draft => ({ name: '', frequency: 'quotidien', intervalDays: '3', color: HABIT_COLORS[0] })
+
+function streakUnit(h: Habit): string {
+  return h.frequency === 'hebdo' ? 'semaines' : 'jours'
+}
 
 type Props = { onNavigate?: (module: 'Notes') => void }
 
@@ -48,6 +55,7 @@ export default function HabitsModule({ onNavigate }: Props) {
       id: 'habit_' + Math.random().toString(36).slice(2, 10),
       name: draft.name.trim(),
       frequency: draft.frequency,
+      intervalDays: draft.frequency === 'intervalle' ? Number(draft.intervalDays) || 1 : undefined,
       color: draft.color,
       doneDates: [],
     }
@@ -58,7 +66,12 @@ export default function HabitsModule({ onNavigate }: Props) {
 
   function startEdit(h: Habit) {
     setEditingId(h.id)
-    setEditDraft({ name: h.name, frequency: h.frequency, color: h.color })
+    setEditDraft({
+      name: h.name,
+      frequency: h.frequency,
+      intervalDays: h.intervalDays ? String(h.intervalDays) : '3',
+      color: h.color,
+    })
     setFormError(null)
   }
 
@@ -70,7 +83,15 @@ export default function HabitsModule({ onNavigate }: Props) {
     }
     setFormError(null)
     const nextHabits = data.habits.map((h) =>
-      h.id === id ? { ...h, name: editDraft.name.trim(), frequency: editDraft.frequency, color: editDraft.color } : h,
+      h.id === id
+        ? {
+            ...h,
+            name: editDraft.name.trim(),
+            frequency: editDraft.frequency,
+            intervalDays: editDraft.frequency === 'intervalle' ? Number(editDraft.intervalDays) || 1 : undefined,
+            color: editDraft.color,
+          }
+        : h,
     )
     await save({ habits: nextHabits }, `Habitudes: modification de "${editDraft.name}"`)
     setEditingId(null)
@@ -124,6 +145,7 @@ export default function HabitsModule({ onNavigate }: Props) {
             >
               <option value="quotidien">Quotidien</option>
               <option value="hebdo">Hebdomadaire</option>
+              <option value="intervalle">Tous les N jours</option>
             </select>
             <div className="flex items-center gap-2">
               {HABIT_COLORS.map((c) => (
@@ -135,6 +157,29 @@ export default function HabitsModule({ onNavigate }: Props) {
                 />
               ))}
             </div>
+            {draft.frequency === 'intervalle' && (
+              <div className="sm:col-span-2">
+                <input
+                  value={draft.intervalDays}
+                  onChange={(e) => setDraft({ ...draft, intervalDays: e.target.value })}
+                  placeholder="Tous les combien de jours ?"
+                  inputMode="numeric"
+                  className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--gold)]"
+                />
+                <div className="mt-1.5 flex flex-wrap gap-1.5">
+                  {INTERVAL_PRESETS.map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setDraft({ ...draft, intervalDays: String(n) })}
+                      className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                    >
+                      {n} jours
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
           <div className="mt-3 flex gap-2">
             <button
@@ -179,6 +224,7 @@ export default function HabitsModule({ onNavigate }: Props) {
                   >
                     <option value="quotidien">Quotidien</option>
                     <option value="hebdo">Hebdomadaire</option>
+                    <option value="intervalle">Tous les N jours</option>
                   </select>
                   <div className="flex items-center gap-2">
                     {HABIT_COLORS.map((c) => (
@@ -190,6 +236,29 @@ export default function HabitsModule({ onNavigate }: Props) {
                       />
                     ))}
                   </div>
+                  {editDraft.frequency === 'intervalle' && (
+                    <div className="sm:col-span-2">
+                      <input
+                        value={editDraft.intervalDays}
+                        onChange={(e) => setEditDraft({ ...editDraft, intervalDays: e.target.value })}
+                        placeholder="Tous les combien de jours ?"
+                        inputMode="numeric"
+                        className="w-full rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--gold)]"
+                      />
+                      <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        {INTERVAL_PRESETS.map((n) => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setEditDraft({ ...editDraft, intervalDays: String(n) })}
+                            className="rounded-full border border-[var(--border)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                          >
+                            {n} jours
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-3 flex gap-2">
                   <button
@@ -212,18 +281,24 @@ export default function HabitsModule({ onNavigate }: Props) {
 
           const streak = currentStreak(h)
           const doneNow = isDoneThisPeriod(h)
+          const broken = brokenStreak(h)
           return (
             <div key={h.id} className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] p-5">
+              {broken && (
+                <div className="mb-3 rounded-lg border border-[var(--red)]/40 bg-[rgba(236,111,111,0.08)] px-3 py-2 text-xs text-[var(--red)]">
+                  ⚠ Série de {broken.length} {streakUnit(h)} rompue — reprends dès aujourd'hui pour repartir.
+                </div>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: h.color }} />
                   <div>
                     <div className="text-sm font-medium">{h.name}</div>
                     <div className="text-xs text-[var(--text-muted)]">
-                      {h.frequency === 'quotidien' ? 'Quotidien' : 'Hebdomadaire'}
+                      {fmtFrequency(h)}
                       {streak > 0 && (
                         <span className="ml-2 text-[var(--gold)]">
-                          🔥 {streak} {h.frequency === 'quotidien' ? 'jours' : 'semaines'}
+                          🔥 {streak} {streakUnit(h)}
                         </span>
                       )}
                       <span className="ml-2">
@@ -242,7 +317,7 @@ export default function HabitsModule({ onNavigate }: Props) {
                         : 'border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text)]'
                     }`}
                   >
-                    {doneNow ? '✓ Fait' : h.frequency === 'quotidien' ? "Fait aujourd'hui" : 'Fait cette semaine'}
+                    {doneNow ? '✓ Fait' : h.frequency === 'hebdo' ? 'Fait cette semaine' : "Fait aujourd'hui"}
                   </button>
                   <button
                     onClick={() => startEdit(h)}
@@ -274,7 +349,7 @@ export default function HabitsModule({ onNavigate }: Props) {
                 <AiSuggestPanel
                   label="Conseil"
                   system="Tu es un coach bienveillant spécialisé dans la formation d'habitudes. Donne un conseil court (2 à 4 phrases), en français, en texte fluide sans liste, adapté à la situation actuelle de cette habitude (série en cours, ou difficulté à s'y tenir)."
-                  prompt={`Habitude : ${h.name} (${h.frequency === 'quotidien' ? 'quotidienne' : 'hebdomadaire'})\nSérie actuelle : ${streak} ${h.frequency === 'quotidien' ? 'jours' : 'semaines'}${!doneNow ? ', pas encore faite pour la période en cours' : ''}.\nDonne-moi un conseil pour m'aider à tenir cette habitude.`}
+                  prompt={`Habitude : ${h.name} (${fmtFrequency(h)})\nSérie actuelle : ${streak} ${streakUnit(h)}${!doneNow ? ', pas encore faite pour la période en cours' : ''}.${broken ? ` Une série précédente de ${broken.length} ${streakUnit(h)} vient de se rompre.` : ''}\nDonne-moi un conseil pour m'aider à tenir cette habitude.`}
                   mode="text"
                 />
               </div>
